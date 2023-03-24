@@ -5327,8 +5327,8 @@ finish</field>
 		    </field>
 		    <field name="location">
 			<object type="Coordinate" id="552">
-			    <field name="x">907</field>
-			    <field name="y">367</field>
+			    <field name="x">916</field>
+			    <field name="y">385</field>
 			</object>
 		    </field>
 		</object>
@@ -5375,8 +5375,8 @@ finish</field>
 		    </field>
 		    <field name="location">
 			<object type="Coordinate" id="560">
-			    <field name="x">917</field>
-			    <field name="y">260</field>
+			    <field name="x">934</field>
+			    <field name="y">297</field>
 			</object>
 		    </field>
 		</object>
@@ -5495,8 +5495,8 @@ finish</field>
 		    </field>
 		    <field name="location">
 			<object type="Coordinate" id="580">
-			    <field name="x">891</field>
-			    <field name="y">564</field>
+			    <field name="x">992</field>
+			    <field name="y">550</field>
 			</object>
 		    </field>
 		</object>
@@ -5507,8 +5507,8 @@ finish</field>
 		    </field>
 		    <field name="location">
 			<object type="Coordinate" id="582">
-			    <field name="x">1086</field>
-			    <field name="y">613</field>
+			    <field name="x">1152</field>
+			    <field name="y">617</field>
 			</object>
 		    </field>
 		</object>
@@ -5687,8 +5687,8 @@ finish</field>
 		    </field>
 		    <field name="location">
 			<object type="Coordinate" id="612">
-			    <field name="x">831</field>
-			    <field name="y">499</field>
+			    <field name="x">872</field>
+			    <field name="y">485</field>
 			</object>
 		    </field>
 		</object>
