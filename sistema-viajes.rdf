@@ -1,0 +1,938 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes/"
+     xml:base="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes/"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <owl:Ontology rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes">
+        <rdfs:comment>Ontología para sistema de Viajes de la asignatura ECSDI</rdfs:comment>
+    </owl:Ontology>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#a_planificar -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#a_planificar">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirActividades"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirHospedaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirTransporte"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlaneaViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaActividades"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaHospedajes"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaTransportes"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#actividad_mañana -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#actividad_mañana">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlanDia"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Actividad"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#actividad_noche -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#actividad_noche">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlanDia"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Actividad"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#actividad_tarde -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#actividad_tarde">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlanDia"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Actividad"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#actividades_ordenadas -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#actividades_ordenadas">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#VisitaTuristicoCultural"/>
+        <rdfs:comment>Actividades ordenadas. Tal y como se expresa en el enunciado, una visita turisstico-cultural consiste en una lista de actividades por dia ordenadas y dentro de cada PlanDia actividades para mañana tarde y noche</rdfs:comment>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#cliente -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#cliente">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobrarViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobroRechazado"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Pago"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlaneaViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Recomendacion"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Usuario"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#prevision -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#prevision">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirMeteorologia"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaMeteorologia"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PrediccionMeteorologica"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#primer_dia -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#primer_dia">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#VisitaTuristicoCultural"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlanDia"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#siguiente_dia -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#siguiente_dia">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlanDia"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlanDia"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#tiene_viaje -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#tiene_viaje">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobrarViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobroRechazado"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Pago"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlaneaViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ReemplazaActividades"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RemplazamientosActividades"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#viaje_actividades -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#viaje_actividades">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirActividades"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirActividadesCanceladas"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirActividadesSimilares"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirMeteorologia"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Recomendacion"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ReemplazaActividades"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RemplazamientosActividades"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaActividadesCanceladas"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaActividadesSimilares"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaMeteorologia"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Actividad"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#viaje_ciudad -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#viaje_ciudad">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Recomendacion"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Ciudad"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#viaje_finalizado -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#viaje_finalizado">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Satisfaccion"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ViajeFinalizado"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#viaje_hospedaje -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#viaje_hospedaje">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirHospedaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Hospedaje"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#viaje_transporte -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#viaje_transporte">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirTransporte"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Transporte"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.w3.org/2002/07/owl#topObjectProperty -->
+
+    <rdf:Description rdf:about="http://www.w3.org/2002/07/owl#topObjectProperty">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlaneaViaje"/>
+    </rdf:Description>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#centrico -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#centrico">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#dato_bancario -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#dato_bancario">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobrarViaje"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#fecha_confirmacion -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#fecha_confirmacion">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Pago"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ViajeConfirmado"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTimeStamp"/>
+        <rdfs:comment>Fecha de confirmación de un acontecimiento</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#fecha_llegada -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#fecha_llegada">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#fecha_salida -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#fecha_salida">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#grado_cultural -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#grado_cultural">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:oneOf>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                        <rdf:first>Algo</rdf:first>
+                        <rdf:rest>
+                            <rdf:Description>
+                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                <rdf:first>Mucho</rdf:first>
+                                <rdf:rest>
+                                    <rdf:Description>
+                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                        <rdf:first>Nada</rdf:first>
+                                        <rdf:rest>
+                                            <rdf:Description>
+                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                <rdf:first>Normal</rdf:first>
+                                                <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                                            </rdf:Description>
+                                        </rdf:rest>
+                                    </rdf:Description>
+                                </rdf:rest>
+                            </rdf:Description>
+                        </rdf:rest>
+                    </rdf:Description>
+                </owl:oneOf>
+            </rdfs:Datatype>
+        </rdfs:range>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#grado_festivo -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#grado_festivo">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:oneOf>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                        <rdf:first>Algo</rdf:first>
+                        <rdf:rest>
+                            <rdf:Description>
+                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                <rdf:first>Mucho</rdf:first>
+                                <rdf:rest>
+                                    <rdf:Description>
+                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                        <rdf:first>Nada</rdf:first>
+                                        <rdf:rest>
+                                            <rdf:Description>
+                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                <rdf:first>Normal</rdf:first>
+                                                <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                                            </rdf:Description>
+                                        </rdf:rest>
+                                    </rdf:Description>
+                                </rdf:rest>
+                            </rdf:Description>
+                        </rdf:rest>
+                    </rdf:Description>
+                </owl:oneOf>
+            </rdfs:Datatype>
+        </rdfs:range>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#grado_ludica -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#grado_ludica">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:oneOf>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                        <rdf:first>Algo</rdf:first>
+                        <rdf:rest>
+                            <rdf:Description>
+                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                <rdf:first>Mucho</rdf:first>
+                                <rdf:rest>
+                                    <rdf:Description>
+                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                        <rdf:first>Nada</rdf:first>
+                                        <rdf:rest>
+                                            <rdf:Description>
+                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                <rdf:first>Normal</rdf:first>
+                                                <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                                            </rdf:Description>
+                                        </rdf:rest>
+                                    </rdf:Description>
+                                </rdf:rest>
+                            </rdf:Description>
+                        </rdf:rest>
+                    </rdf:Description>
+                </owl:oneOf>
+            </rdfs:Datatype>
+        </rdfs:range>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#hay_lluvia_matina -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#hay_lluvia_matina">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PrediccionMeteorologica"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#hay_lluvia_noche -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#hay_lluvia_noche">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PrediccionMeteorologica"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#hay_lluvia_tarde -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#hay_lluvia_tarde">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PrediccionMeteorologica"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#identificador -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#identificador">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Actividad"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Hospedaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Lugar"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Pago"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Transporte"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Usuario"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#motivo_rechazo -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#motivo_rechazo">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobroRechazado"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#precio -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#precio">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2002/07/owl#real"/>
+        <rdfs:comment>Precio de un elemento (viaje, ...)</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#precio_maximo -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#precio_maximo">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2002/07/owl#real"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#precio_minimo -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#precio_minimo">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2002/07/owl#real"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#valoracion -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#valoracion">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Satisfaccion"/>
+        <rdfs:range>
+            <rdfs:Datatype>
+                <owl:oneOf>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</rdf:first>
+                        <rdf:rest>
+                            <rdf:Description>
+                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</rdf:first>
+                                <rdf:rest>
+                                    <rdf:Description>
+                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">3</rdf:first>
+                                        <rdf:rest>
+                                            <rdf:Description>
+                                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">4</rdf:first>
+                                                <rdf:rest>
+                                                    <rdf:Description>
+                                                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
+                                                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5</rdf:first>
+                                                        <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                                                    </rdf:Description>
+                                                </rdf:rest>
+                                            </rdf:Description>
+                                        </rdf:rest>
+                                    </rdf:Description>
+                                </rdf:rest>
+                            </rdf:Description>
+                        </rdf:rest>
+                    </rdf:Description>
+                </owl:oneOf>
+            </rdfs:Datatype>
+        </rdfs:range>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.w3.org/2002/07/owl#topDataProperty -->
+
+    <rdf:Description rdf:about="http://www.w3.org/2002/07/owl#topDataProperty">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Actividad"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Hospedaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Lugar"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Transporte"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Usuario"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Description>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Accion -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Accion">
+        <rdfs:comment>formato: (Protocolo:Mensaje)
+Mensajes que piden a un agente realizar una acción</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Actividad -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Actividad">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment>Actividades a realizar durante una estancia</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Ciudad -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Ciudad">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Lugar"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobrarViaje -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobrarViaje">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Accion"/>
+        <rdfs:comment>&quot;Comunica cobro&quot;.&quot;QuieroCobrarViaje&quot;
+Mensaje que contiene la informacion del cobro del viaje</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobroAcceptado -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobroAcceptado">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion"/>
+        <rdfs:comment>&quot;Comunica cobro&quot;.&quot;TomaCobroAceptado&quot;
+Mensaje que indica que el cobro ha sido acceptado correctamente</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobroRechazado -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobroRechazado">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion"/>
+        <rdfs:comment>&quot;Comunica cobro&quot;.&quot;TomaCobroRechazado&quot;
+Mensaje que indica que el cobro se ha rechazado</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Hospedaje -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Hospedaje">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment>Hospedaje donde residir durante un viaje</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion">
+        <rdfs:comment>formato: (Protocolo:Mensaje)
+Mensaje informativo de un agente a otro</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Lugar -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Lugar">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment>Representa los distintos tipos de lugares (ciudades, puntos de interes, ...)</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Pago -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Pago">
+        <rdfs:comment>elemento que representa el pago de un viaje por un usuario</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirActividades -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirActividades">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Accion"/>
+        <rdfs:comment>&quot;Comunica actividades&quot;:&quot;QuieroActividades&quot;
+Envia un PeticionDeViaje de donde se extrae la informacion sobre las fechas y rangos de precio</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirActividadesCanceladas -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirActividadesCanceladas">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Accion"/>
+        <rdfs:comment>&quot;Comunica actividades canceladas&quot;:&quot;QuieroActividadesCanceladas&quot;</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirActividadesSimilares -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirActividadesSimilares">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Accion"/>
+        <rdfs:comment>&quot;Comunica actividades similares&quot;:&quot;QuieroActividadesSimilares&quot;
+Mensaje que envia el Agente de cancelaciones al planificador con un viaje concreto y sus actividades a reemplazar. Se envia por cada viaje que haya</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirHospedaje -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirHospedaje">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Accion"/>
+        <rdfs:comment>&quot;Comunica hospedaje&quot;:&quot;QuieroHospedaje&quot;
+Agente solicitando hospedaje para unas condiciones concretas
+Envia un PeticionDeViaje de donde se extrae la informacion sobre las fechas y rangos de precio</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirMeteorologia -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirMeteorologia">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Accion"/>
+        <rdfs:comment>&quot;Comunica prevision meteorologica&quot;:&quot;QuieroPrevisionMeteorologica&quot;</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirTransporte -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirTransporte">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Accion"/>
+        <rdfs:comment>&quot;Comunica transporte&quot;:&quot;QuieroTransporte&quot;
+Envia un PeticionDeViaje de donde se extrae la informacion sobre las fechas y rangos de precio</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PeticionDeViaje">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment>Clase que representa la Informacion contenida en una petición de Viaje</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlanDia -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlanDia">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment>Consiste en la planificacion de actividades para un dia del viaje (actividad de mañana, tarde y noche)</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlaneaViaje -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlaneaViaje">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Accion"/>
+        <rdfs:comment>&quot;Comunica plan de viaje&quot;:&quot;QuieroPlanViaje&quot;
+Pedirle al planificador que planee un viaje con la información proporcionada</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PrediccionMeteorologica -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PrediccionMeteorologica">
+        <rdfs:comment>Predicción meteorologica del próximo día</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PropuestaViaje -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PropuestaViaje">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion"/>
+        <rdfs:comment>&quot;Comunica plan de viaje&quot;:&quot;TomaPlanViaje&quot;
+Viaje entero planificado</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Recomendacion -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Recomendacion"/>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ReemplazaActividades -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ReemplazaActividades">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Accion"/>
+        <rdfs:comment>&quot;Comunica actividades a reemplazar&quot;:&quot;QuieroActividadesReemplazadas&quot;
+Mensaje que envia el Agente de cancelaciones al planificador con un viaje concreto y sus actividades a reemplazar. Se envia por cada viaje que haya</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RemplazamientosActividades -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RemplazamientosActividades">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion"/>
+        <rdfs:comment>&quot;Comunica actividades a reemplazar&quot;:&quot;TomaActividadesReemplazadas&quot;</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaActividades -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaActividades">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion"/>
+        <rdfs:comment>&quot;Comunica actividades&quot;:&quot;TomaActividades&quot;</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaActividadesCanceladas -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaActividadesCanceladas">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion"/>
+        <rdfs:comment>&quot;Comunica actividades canceladas&quot;:&quot;TomaActividadesCanceladas&quot;</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaActividadesSimilares -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaActividadesSimilares">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion"/>
+        <rdfs:comment>&quot;Comunica actividades similares&quot;:&quot;TomaActividadesSimilares&quot;</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaHospedajes -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaHospedajes">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion"/>
+        <rdfs:comment>&quot;Comunica hospedaje&quot;:&quot;TomaHospedaje&quot;</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaMeteorologia -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaMeteorologia">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion"/>
+        <rdfs:comment>&quot;Comunica prevision meteorologica&quot;:&quot;TomaPrevisionMeteorologica&quot;</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaTransportes -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaTransportes">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Informacion"/>
+        <rdfs:comment>&quot;Comunica Transporte&quot;:&quot;TomaTransporte&quot;</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Satisfaccion -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Satisfaccion">
+        <rdfs:comment>Registra la satisfaccion de un viaje</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Transporte -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Transporte">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment>Transporte requerido para el viaje</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Usuario -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Usuario">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment>Representa un cliente, su perfil</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment>Clase que contiene toda la informacion sobre un viaje</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ViajeConfirmado -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ViajeConfirmado">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ViajeFinalizado -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ViajeFinalizado">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ViajePendienteDeConfirmacion -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ViajePendienteDeConfirmacion">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Viaje"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#VisitaTuristicoCultural -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#VisitaTuristicoCultural">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment>Esta clase hace la funcion de lista ordenada de &quot;PlanDia&quot;</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // General axioms
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <rdf:Description>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobrarViaje"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirActividades"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirHospedaje"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PedirTransporte"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PlaneaViaje"/>
+        </owl:members>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobroAcceptado"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobroRechazado"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PropuestaViaje"/>
+        </owl:members>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobroAcceptado"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#CobroRechazado"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#PropuestaViaje"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaActividades"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaHospedajes"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#RespuestaTransportes"/>
+        </owl:members>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ViajeConfirmado"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ViajeFinalizado"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#ViajePendienteDeConfirmacion"/>
+        </owl:members>
+    </rdf:Description>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 4.5.25.2023-02-15T19:15:49Z) https://github.com/owlcs/owlapi -->
+
