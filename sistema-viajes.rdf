@@ -740,7 +740,9 @@ Viaje entero planificado</rdfs:comment>
 
     <!-- http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Recomendacion -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Recomendacion"/>
+    <owl:Class rdf:about="http://www.semanticweb.org/buffalo/ontologies/2023/4/sistema-viajes#Recomendacion">
+        <rdfs:comment>Classe que representa una recomendacion dirijida a un cliente</rdfs:comment>
+    </owl:Class>
     
 
 
