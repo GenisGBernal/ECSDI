@@ -169,9 +169,7 @@ def register():
     # Extraemos el mensaje y creamos un grafo con él
     message = request.args['content']
     gm = Graph()
-    print("VAYA")
-    print(message)
-    gm.parse(data=message)
+    gm.parse(data=message, format='xml')
 
     msgdic = get_message_properties(gm)
 
