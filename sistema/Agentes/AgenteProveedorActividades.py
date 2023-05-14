@@ -27,6 +27,7 @@ from AgentUtil.Util import gethostname
 import socket
 
 from AgentUtil.ACLMessages import registerAgent
+from sistema.Agentes.AgentUtil.OntoNamespaces import ECSDI
 
 
 __author__ = 'javier'
@@ -122,6 +123,9 @@ def register_message():
     gr = registerAgent(AgenteProveedorActividades, AgenteDirectorio, AgenteDirectorio.uri, getMessageCount())
     return gr
 
+def obtener_actividades():
+    grafo
+
 
 @app.route("/iface", methods=['GET', 'POST'])
 def browser_iface():
@@ -171,14 +175,14 @@ def comunicacion():
     # Comprobamos que sea un mensaje FIPA ACL
     if msgdic is None:
         # Si no es, respondemos que no hemos entendido el mensaje
-        gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorActividades.uri, msgcnt=mss_cnt)
+        gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorActividades.uri, msgcnt=getMessageCount())
     else:
         # Obtenemos la performativa
         perf = msgdic['performative']
 
         if perf != ACL.request:
             # Si no es un request, respondemos que no hemos entendido el mensaje
-            gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorActividades.uri, msgcnt=mss_cnt)
+            gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorActividades.uri, msgcnt=getMessageCount())
         else:
             # Extraemos el objeto del contenido que ha de ser una accion de la ontologia de acciones del agente
             # de registro
@@ -188,14 +192,9 @@ def comunicacion():
                 content = msgdic['content']
                 accion = gm.value(subject=content, predicate=RDF.type)
 
-            # Aqui realizariamos lo que pide la accion
-            # Por ahora simplemente retornamos un Inform-done
-            gr = build_message(Graph(),
-                               ACL['inform'],
-                               sender=AgenteProveedorActividades.uri,
-                               msgcnt=mss_cnt,
-                               receiver=msgdic['sender'], )
-    mss_cnt += 1
+                if accion == ECSDI.ObtenerActividades:
+                    logger.info('Peticion de actividades')
+                    actividades = obtener_actividades()
 
     logger.info('Respondemos a la peticion')
 
