@@ -51,7 +51,7 @@ args = parser.parse_args()
 # Configuration stuff
 if args.port is None:
     # TODO: PONER PUERTO QUE SEA UNICO 
-    port = 9001
+    port = 9002
 else:
     port = args.port
 
@@ -91,8 +91,8 @@ def getMessageCount():
     return mss_cnt
 
 # Datos del Agente
-AgentePlantilla = Agent('AgentePlantilla',
-                                    agn.AgentePlantilla,
+AgentePlanificador = Agent('AgentePlanificador',
+                                    agn.AgentePlanificador,
                                     'http://%s:%d/comm' % (hostaddr, port),
                                     'http://%s:%d/Stop' % (hostaddr, port))
 
@@ -121,7 +121,7 @@ def register_message():
 
     logger.info('Nos registramos')
 
-    gr = registerAgent(AgentePlantilla, AgenteDirectorio, AgenteDirectorio.uri, getMessageCount())
+    gr = registerAgent(AgentePlanificador, AgenteDirectorio, AgenteDirectorio.uri, getMessageCount())
     return gr
 
 def obtener_actividades():
@@ -176,14 +176,14 @@ def comunicacion():
     # Comprobamos que sea un mensaje FIPA ACL
     if msgdic is None:
         # Si no es, respondemos que no hemos entendido el mensaje
-        gr = build_message(Graph(), ACL['not-understood'], sender=AgentePlantilla.uri, msgcnt=getMessageCount())
+        gr = build_message(Graph(), ACL['not-understood'], sender=AgentePlanificador.uri, msgcnt=getMessageCount())
     else:
         # Obtenemos la performativa
         perf = msgdic['performative']
 
         if perf != ACL.request:
             # Si no es un request, respondemos que no hemos entendido el mensaje
-            gr = build_message(Graph(), ACL['not-understood'], sender=AgentePlantilla.uri, msgcnt=getMessageCount())
+            gr = build_message(Graph(), ACL['not-understood'], sender=AgentePlanificador.uri, msgcnt=getMessageCount())
         else:
             # Extraemos el objeto del contenido que ha de ser una accion de la ontologia de acciones del agente
             # de registro

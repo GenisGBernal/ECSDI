@@ -27,7 +27,7 @@ from AgentUtil.Util import gethostname
 import socket
 
 from AgentUtil.ACLMessages import registerAgent
-from sistema.Agentes.AgentUtil.OntoNamespaces import ECSDI
+from AgentUtil.OntoNamespaces import ECSDI
 
 
 __author__ = 'javier'
