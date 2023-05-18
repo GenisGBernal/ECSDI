@@ -113,7 +113,7 @@ def register():
         agn_uri = gm.value(subject=content, predicate=DSO.Uri)
         agn_type = gm.value(subject=content, predicate=DSO.AgentType)
 
-        logger.info('Peticion de registro de: ' + agn_name)
+        logger.info('Peticion de registro de: ' + agn_name + ' - tipo: ' + agn_type)
 
         # Añadimos la informacion en el grafo de registro vinculandola a la URI
         # del agente y registrandola como tipo FOAF.Agent
@@ -140,16 +140,15 @@ def register():
         # Buscamos una coincidencia exacta
         # Retornamos el primero de la lista de posibilidades
 
-        logger.info('Peticion de busqueda')
-
         agn_type = gm.value(subject=content, predicate=DSO.AgentType)
+
+        logger.info('Peticion de busqueda de tipo: ' + agn_type)
+
         rsearch = dsgraph.triples((None, DSO.AgentType, agn_type))
         if rsearch is not None:
             agn_uri = next(rsearch)[0]
             agn_add = dsgraph.value(subject=agn_uri, predicate=DSO.Address)
             agn_name = dsgraph.value(subject=agn_uri, predicate=FOAF.name)
-
-            logger.info('Peticion de busqueda de: '+ agn_name )
 
             gr = Graph()
             gr.bind('dso', DSO)

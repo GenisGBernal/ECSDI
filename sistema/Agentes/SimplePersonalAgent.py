@@ -23,7 +23,7 @@ from rdflib.namespace import FOAF, RDF
 from AgentUtil.ACL import ACL
 from AgentUtil.DSO import DSO
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, send_message
+from AgentUtil.ACLMessages import build_message, send_message, getAgentInfo
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.Util import gethostname
@@ -104,38 +104,6 @@ DirectoryAgent = Agent('DirectoryAgent',
 dsgraph = Graph()
 
 
-def directory_search_message(type):
-    """
-    Busca en el servicio de registro mandando un
-    mensaje de request con una accion Seach del servicio de directorio
-
-    Podria ser mas adecuado mandar un query-ref y una descripcion de registo
-    con variables
-
-    :param type:
-    :return:
-    """
-    logger.info('Buscamos en el servicio de registro')
-
-    gmess = Graph()
-
-    gmess.bind('foaf', FOAF)
-    gmess.bind('dso', DSO)
-    reg_obj = agn[AgentePlantilla.name + '-search']
-    gmess.add((reg_obj, RDF.type, DSO.Search))
-    gmess.add((reg_obj, DSO.AgentType, type))
-
-    msg = build_message(gmess, perf=ACL.request,
-                        sender=AgentePlantilla.uri,
-                        receiver=DirectoryAgent.uri,
-                        content=reg_obj,
-                        msgcnt=getMessageCount())
-    gr = send_message(msg, DirectoryAgent.address)
-    logger.info('Recibimos informacion del agente')
-
-    return gr
-
-
 def infoagent_search_message(addr, ragn_uri):
     """
     Envia una accion a un agente de informacion
@@ -213,14 +181,21 @@ def agentbehavior1():
 
     # Buscamos en el directorio
     # un agente de hoteles
-    gr = directory_search_message(DSO.AgentePlanificador)
+    # gr = directory_search_message(DSO.AgentePlanificador)
+
+    agente = getAgentInfo(DSO.AgentePlanificador, DirectoryAgent, AgentePlantilla, getMessageCount())
+
+    print("ADIOS")
+    print(agente.name)
+    print(agente.uri)
+    print(agente.address)
 
     # Obtenemos la direccion del agente de la respuesta
     # No hacemos ninguna comprobacion sobre si es un mensaje valido
-    msg = gr.value(predicate=RDF.type, object=ACL.FipaAclMessage)
-    content = gr.value(subject=msg, predicate=ACL.content)
-    ragn_addr = gr.value(subject=content, predicate=DSO.Address)
-    ragn_uri = gr.value(subject=content, predicate=DSO.Uri)
+    # msg = gr.value(predicate=RDF.type, object=ACL.FipaAclMessage)
+    # content = gr.value(subject=msg, predicate=ACL.content)
+    # ragn_addr = gr.value(subject=content, predicate=DSO.Address)
+    # ragn_uri = gr.value(subject=content, predicate=DSO.Uri)
 
     # Ahora mandamos un objeto de tipo request mandando una accion de tipo Search
     # que esta en una supuesta ontologia de acciones de agentes

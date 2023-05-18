@@ -121,7 +121,7 @@ def register_message():
 
     logger.info('Nos registramos')
 
-    gr = registerAgent(AgentePlantilla, AgenteDirectorio, AgenteDirectorio.uri, getMessageCount())
+    gr = registerAgent(AgentePlantilla, AgenteDirectorio, AgentePlantilla.uri, getMessageCount())
     return gr
 
 def obtener_actividades():
