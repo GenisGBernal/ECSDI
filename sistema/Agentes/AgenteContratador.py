@@ -23,11 +23,14 @@ from rdflib.namespace import FOAF, RDF
 from AgentUtil.ACL import ACL
 from AgentUtil.DSO import DSO
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, send_message, getAgentInfo
+from AgentUtil.ACLMessages import build_message, send_message, getAgentInfo, get_message_properties
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.Util import gethostname
 import socket
+
+from AgentUtil.OntoNamespaces import ECSDI
+
 
 __author__ = 'javier'
 
@@ -89,8 +92,8 @@ def getMessageCount():
     return mss_cnt
 
 # Datos del Agente
-AgentePlantilla = Agent('AgentePlantilla',
-                       agn.AgentePlantilla,
+AgenteContratador = Agent('AgenteContratador',
+                       agn.AgenteContratador,
                        'http://%s:%d/comm' % (hostaddr, port),
                        'http://%s:%d/Stop' % (hostaddr, port))
 
@@ -117,16 +120,16 @@ def infoagent_search_message(addr, ragn_uri):
 
     gmess.bind('foaf', FOAF)
     gmess.bind('iaa', IAA)
-    reg_obj = agn[AgentePlantilla.name + '-info-search']
-    gmess.add((reg_obj, RDF.type, IAA.Search))
+    sujeto = agn[AgenteContratador.name + '-info-search']
+    gmess.add((sujeto, RDF.type, ECSDI.ObtenerActividades))
 
     msg = build_message(gmess, perf=ACL.request,
-                        sender=AgentePlantilla.uri,
+                        sender=AgenteContratador.uri,
                         receiver=ragn_uri,
-                        msgcnt=getMessageCount())
+                        msgcnt=getMessageCount(),
+                        content=sujeto)
     gr = send_message(msg, addr)
     logger.info('Recibimos respuesta a la peticion al servicio de informacion')
-
     return gr
 
 
@@ -136,11 +139,15 @@ def browser_iface():
     Permite la comunicacion con el agente via un navegador
     via un formulario
     """
+
     if request.method == 'GET':
         return render_template('iface.html')
     else:
         user = request.form['username']
         mess = request.form['message']
+
+
+        
         return render_template('riface.html', user=user, mess=mess)
 
 
@@ -178,28 +185,15 @@ def agentbehavior1():
 
     :return:
     """
+    agente = getAgentInfo(DSO.AgentePlanificador, DirectoryAgent, AgenteContratador, getMessageCount())
 
-    # Buscamos en el directorio
-    # un agente de hoteles
-    # gr = directory_search_message(DSO.AgentePlanificador)
-
-    tipo_agente_buscado = DSO.AgentePlanificador
-
-    logger.info("Petición de búsqueda al agente planficador de: " + tipo_agente_buscado)
-    agente = getAgentInfo(tipo_agente_buscado, DirectoryAgent, AgentePlantilla, getMessageCount())
-    logger.info("Encontrado agente: " + agente.name + " - en dirección: " + agente.address)
-
-
-    # Obtenemos la direccion del agente de la respuesta
-    # No hacemos ninguna comprobacion sobre si es un mensaje valido
-    # msg = gr.value(predicate=RDF.type, object=ACL.FipaAclMessage)
-    # content = gr.value(subject=msg, predicate=ACL.content)
-    # ragn_addr = gr.value(subject=content, predicate=DSO.Address)
-    # ragn_uri = gr.value(subject=content, predicate=DSO.Uri)
 
     # Ahora mandamos un objeto de tipo request mandando una accion de tipo Search
     # que esta en una supuesta ontologia de acciones de agentes
-    # infoagent_search_message(ragn_addr, ragn_uri)
+    gr = infoagent_search_message(agente.address, agente.uri)
+
+    msgdic = get_message_properties(gr)
+    print(msgdic)
 
 if __name__ == '__main__':
     # Ponemos en marcha los behaviors

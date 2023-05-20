@@ -16,8 +16,12 @@ from rdflib.namespace import RDF, OWL
 from AgentUtil.ACL import ACL
 from AgentUtil.DSO import DSO
 from AgentUtil.Agent import Agent
+from AgentUtil.Logging import config_logger
 
 agn = Namespace("http://www.agentes.org#")
+
+# Logging
+logger = config_logger(level=1)
 
 def registerAgent(agent, directoryAgent, typeOfAgent, messageCount):
     gmess = Graph()
@@ -114,6 +118,9 @@ def get_message_properties(msg):
 
 
 def getAgentInfo(agentType, directoryAgent, sender, messageCount):
+
+    logger.info("Petición de búsqueda al agente directorio de: " + agentType)
+
     gmess = Graph()
     gmess.bind('foaf', FOAF)
     gmess.bind('dso', DSO)
@@ -132,5 +139,7 @@ def getAgentInfo(agentType, directoryAgent, sender, messageCount):
     address = gr.value(subject=content, predicate=DSO.Address)
     url = gr.value(subject=content, predicate=DSO.Uri)
     name = gr.value(subject=content, predicate=FOAF.name)
+
+    logger.info("Encontrado agente: " + name + " - en dirección: " + address)
 
     return Agent(name, url, address, None)

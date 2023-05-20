@@ -125,7 +125,7 @@ def register_message():
     return gr
 
 def obtener_actividades():
-    grafo
+    log.info('Obtengo actividades')
 
 
 @app.route("/iface", methods=['GET', 'POST'])
@@ -173,6 +173,8 @@ def comunicacion():
 
     msgdic = get_message_properties(gm)
 
+    gr = None
+
     # Comprobamos que sea un mensaje FIPA ACL
     if msgdic is None:
         # Si no es, respondemos que no hemos entendido el mensaje
@@ -196,6 +198,7 @@ def comunicacion():
                 if accion == ECSDI.ObtenerActividades:
                     logger.info('Peticion de actividades')
                     actividades = obtener_actividades()
+                    gr = build_message(Graph(), ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount())
 
     logger.info('Respondemos a la peticion')
 
