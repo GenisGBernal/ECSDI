@@ -124,9 +124,6 @@ def register_message():
     gr = registerAgent(AgentePlanificador, AgenteDirectorio, DSO.AgentePlanificador, getMessageCount())
     return gr
 
-def obtener_actividades():
-    log.info('Obtengo actividades')
-
 
 @app.route("/iface", methods=['GET', 'POST'])
 def browser_iface():
@@ -147,6 +144,37 @@ def stop():
     tidyup()
     shutdown_server()
     return "Parando Servidor"
+
+def obtener_hospedaje(primerDia, últimoDia):
+    pass
+
+def obtener_transporte(primerDia, últimoDia):
+    pass
+
+def obtener_actividades(primerDia, últimoDia):
+    pass
+
+def planificar_viaje(sujeto, gm):
+
+    diaPartida = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
+    diaRetorno = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
+
+    p1 = Process(target=obtener_actividades, args=(diaPartida,diaRetorno))
+    p1.start()
+
+    p2 =
+    p2.start()
+
+    p3 = 
+    p3.start()
+
+    p1.join()
+    p2.join()
+    p3.join()
+
+    # TODO: Construir respuesta p1+p2+p3
+
+    return build_message(Graph(), ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount())
 
 
 @app.route("/comm")
@@ -192,15 +220,12 @@ def comunicacion():
 
             # Averiguamos el tipo de la accion
             if 'content' in msgdic:
-                content = msgdic['content']
-                accion = gm.value(subject=content, predicate=RDF.type)
+                sujeto = msgdic['content']
+                accion = gm.value(subject=sujeto, predicate=RDF.type)
 
                 if accion == ECSDI.PeticionDeViaje:
                     logger.info('Peticion de viaje')
-                    actividades = obtener_actividades()
-                    print(gm.value(subject=content, predicate=ECSDI.LugarDePartida))
-                    print(gm.value(subject=content, predicate=ECSDI.DiaDePartida))
-                    gr = build_message(Graph(), ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount())
+                    gr = planificar_viaje(sujeto, gm)
 
     logger.info('Respondemos a la peticion')
 
