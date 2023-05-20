@@ -183,12 +183,12 @@ def agentbehavior1():
     # un agente de hoteles
     # gr = directory_search_message(DSO.AgentePlanificador)
 
-    agente = getAgentInfo(DSO.AgentePlanificador, DirectoryAgent, AgentePlantilla, getMessageCount())
+    tipo_agente_buscado = DSO.AgentePlanificador
 
-    print("ADIOS")
-    print(agente.name)
-    print(agente.uri)
-    print(agente.address)
+    logger.info("Petición de búsqueda al agente planficador de: " + tipo_agente_buscado)
+    agente = getAgentInfo(tipo_agente_buscado, DirectoryAgent, AgentePlantilla, getMessageCount())
+    logger.info("Encontrado agente: " + agente.name + " - en dirección: " + agente.address)
+
 
     # Obtenemos la direccion del agente de la respuesta
     # No hacemos ninguna comprobacion sobre si es un mensaje valido

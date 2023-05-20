@@ -15,6 +15,7 @@ import requests
 from rdflib.namespace import RDF, OWL
 from AgentUtil.ACL import ACL
 from AgentUtil.DSO import DSO
+from AgentUtil.Agent import Agent
 
 agn = Namespace("http://www.agentes.org#")
 
