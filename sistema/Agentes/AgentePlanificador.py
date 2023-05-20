@@ -195,9 +195,11 @@ def comunicacion():
                 content = msgdic['content']
                 accion = gm.value(subject=content, predicate=RDF.type)
 
-                if accion == ECSDI.ObtenerActividades:
-                    logger.info('Peticion de actividades')
+                if accion == ECSDI.PeticionDeViaje:
+                    logger.info('Peticion de viaje')
                     actividades = obtener_actividades()
+                    print(gm.value(subject=content, predicate=ECSDI.LugarDePartida))
+                    print(gm.value(subject=content, predicate=ECSDI.DiaDePartida))
                     gr = build_message(Graph(), ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount())
 
     logger.info('Respondemos a la peticion')

@@ -17,7 +17,7 @@ import logging
 import argparse
 
 from flask import Flask, render_template, request
-from rdflib import Graph, Namespace
+from rdflib import XSD, Graph, Literal, Namespace
 from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
@@ -107,30 +107,31 @@ DirectoryAgent = Agent('DirectoryAgent',
 dsgraph = Graph()
 
 
-def infoagent_search_message(addr, ragn_uri):
-    """
-    Envia una accion a un agente de informacion
-    """
-    logger.info('Hacemos una peticion al servicio de informacion')
+def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno):
+
+    agentePlanificador = getAgentInfo(DSO.AgentePlanificador, DirectoryAgent, AgenteContratador, getMessageCount())
 
     gmess = Graph()
-
-    # Supuesta ontologia de acciones de agentes de informacion
     IAA = Namespace('IAActions')
-
     gmess.bind('foaf', FOAF)
     gmess.bind('iaa', IAA)
-    sujeto = agn[AgenteContratador.name + '-info-search']
-    gmess.add((sujeto, RDF.type, ECSDI.ObtenerActividades))
+    sujeto = agn['PeticiónDeViaje-' + str(getMessageCount())]
+    gmess.add((sujeto, RDF.type, ECSDI.PeticionDeViaje))
+    gmess.add((sujeto, ECSDI.Usuario, Literal(usuario, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.LugarDePartida, Literal(lugarDePartida, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.DiaDePartida, Literal(diaPartida, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(diaRetorno, datatype=XSD.string)))
 
     msg = build_message(gmess, perf=ACL.request,
                         sender=AgenteContratador.uri,
-                        receiver=ragn_uri,
+                        receiver=agentePlanificador.uri,
                         msgcnt=getMessageCount(),
                         content=sujeto)
-    gr = send_message(msg, addr)
-    logger.info('Recibimos respuesta a la peticion al servicio de informacion')
-    return gr
+    
+    gr = send_message(msg, agentePlanificador.address)
+
+
+    msgdic = get_message_properties(gr)
 
 
 @app.route("/iface", methods=['GET', 'POST'])
@@ -143,12 +144,17 @@ def browser_iface():
     if request.method == 'GET':
         return render_template('iface.html')
     else:
-        user = request.form['username']
-        mess = request.form['message']
+        usuario = request.form['Usuario']
+        lugarDePartida = request.form['LugarDePartida']
+        diaSalida = request.form['DiaDePartida']
+        diaRetorno = request.form['DiaDeRetorno']
 
+        if diaRetorno < diaSalida:
+            return render_template('iface.html', error_message='La fecha de retorno no puede ser anterior a la de salida')
 
+        generar_peticion_de_viaje(usuario, lugarDePartida, diaSalida, diaRetorno)
         
-        return render_template('riface.html', user=user, mess=mess)
+        return render_template('riface.html', user="hoa", mess="df")
 
 
 @app.route("/stop")
@@ -178,31 +184,9 @@ def tidyup():
     """
     pass
 
-
-def agentbehavior1():
-    """
-    Un comportamiento del agente
-
-    :return:
-    """
-    agente = getAgentInfo(DSO.AgentePlanificador, DirectoryAgent, AgenteContratador, getMessageCount())
-
-
-    # Ahora mandamos un objeto de tipo request mandando una accion de tipo Search
-    # que esta en una supuesta ontologia de acciones de agentes
-    gr = infoagent_search_message(agente.address, agente.uri)
-
-    msgdic = get_message_properties(gr)
-    print(msgdic)
-
 if __name__ == '__main__':
-    # Ponemos en marcha los behaviors
-    ab1 = Process(target=agentbehavior1)
-    ab1.start()
-
     # Ponemos en marcha el servidor
     app.run(host=hostname, port=port)
 
     # Esperamos a que acaben los behaviors
-    ab1.join()
     logger.info('The End')
