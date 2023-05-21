@@ -148,7 +148,7 @@ def stop():
 def obtener_hospedaje(primerDia, últimoDia):
     pass
 
-def obtener_transporte(primerDia, últimoDia):
+def obtener_transporte(lugarDePartida, primerDia, últimoDia):
     pass
 
 def obtener_actividades(primerDia, últimoDia):
@@ -159,18 +159,23 @@ def planificar_viaje(sujeto, gm):
     diaPartida = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
     diaRetorno = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
 
-    p1 = Process(target=obtener_actividades, args=(diaPartida,diaRetorno))
-    p1.start()
+    print(diaPartida)
+    print(diaRetorno)
 
-    p2 =
-    p2.start()
+    # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
 
-    p3 = 
-    p3.start()
+    # p1 = Process(target=obtener_actividades, args=(diaPartida,diaRetorno))
+    # p1.start()
 
-    p1.join()
-    p2.join()
-    p3.join()
+    # p2 =
+    # p2.start()
+
+    # p3 = 
+    # p3.start()
+
+    # p1.join()
+    # p2.join()
+    # p3.join()
 
     # TODO: Construir respuesta p1+p2+p3
 

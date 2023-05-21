@@ -128,6 +128,7 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno):
                         msgcnt=getMessageCount(),
                         content=sujeto)
     
+    log.info("Petición de viaje al AgentePlanificador")
     gr = send_message(msg, agentePlanificador.address)
 
 
