@@ -107,7 +107,7 @@ DirectoryAgent = Agent('DirectoryAgent',
 dsgraph = Graph()
 
 
-def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno):
+def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, grado_ludica, grado_cultural, grado_festivo):
 
     agentePlanificador = getAgentInfo(DSO.AgentePlanificador, DirectoryAgent, AgenteContratador, getMessageCount())
 
@@ -121,6 +121,10 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno):
     gmess.add((sujeto, ECSDI.LugarDePartida, Literal(lugarDePartida, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.DiaDePartida, Literal(diaPartida, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(diaRetorno, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.grado_ludica, Literal(grado_ludica, datatype=XSD.integer)))
+    gmess.add((sujeto, ECSDI.grado_cultural, Literal(grado_cultural, datatype=XSD.integer)))
+    gmess.add((sujeto, ECSDI.grado_festivo, Literal(grado_festivo, datatype=XSD.integer)))
+
 
     msg = build_message(gmess, perf=ACL.request,
                         sender=AgenteContratador.uri,
@@ -149,11 +153,23 @@ def browser_iface():
         lugarDePartida = request.form['LugarDePartida']
         diaSalida = request.form['DiaDePartida']
         diaRetorno = request.form['DiaDeRetorno']
+        grado_ludica = request.form['grado_ludica']
+        grado_cultural = request.form['grado_cultural']
+        grado_festivo = request.form['grado_festivo']
+
+        print(grado_festivo)
 
         if diaRetorno < diaSalida:
             return render_template('iface.html', error_message='La fecha de retorno no puede ser anterior a la de salida')
 
-        generar_peticion_de_viaje(usuario, lugarDePartida, diaSalida, diaRetorno)
+        generar_peticion_de_viaje(
+            usuario=usuario, 
+            lugarDePartida=lugarDePartida, 
+            diaSalida=diaSalida, 
+            diaRetorno=diaRetorno, 
+            grado_ludica=grado_ludica, 
+            grado_cultural=grado_cultural, 
+            grado_festivo=grado_festivo)
         
         return render_template('riface.html', user="hoa", mess="df")
 

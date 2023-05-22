@@ -14,12 +14,12 @@ import logging
 import argparse
 
 from flask import Flask, request
-from rdflib import Graph, Namespace, Literal
+from rdflib import XSD, Graph, Namespace, Literal
 from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, send_message, get_message_properties
+from AgentUtil.ACLMessages import build_message, send_message, get_message_properties, getAgentInfo
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.DSO import DSO
@@ -151,21 +151,43 @@ def obtener_hospedaje(primerDia, últimoDia):
 def obtener_transporte(lugarDePartida, primerDia, últimoDia):
     pass
 
-def obtener_actividades(primerDia, últimoDia):
-    pass
+def obtener_actividades(fecha_llegada, fecha_salida, grado_ludica, grado_cultural, grado_festivo):
+    
+    agenteProveedorActividades = getAgentInfo(DSO.AgenteProveedorActividades, AgenteDirectorio, AgentePlanificador, getMessageCount())
+    
+    gmess = Graph()
+    IAA = Namespace('IAActions')
+    gmess.bind('foaf', FOAF)
+    gmess.bind('iaa', IAA)
+    sujeto = agn['PeticiónIntervaloDeActividades-' + str(getMessageCount())]
+    gmess.add((sujeto, RDF.type, ECSDI.IntervaloDeActividades))
+    gmess.add((sujeto, ECSDI.DiaDePartida, Literal(fecha_llegada, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(fecha_salida, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.grado_ludica, Literal(grado_ludica, datatype=XSD.integer)))
+    gmess.add((sujeto, ECSDI.grado_cultural, Literal(grado_cultural, datatype=XSD.integer)))
+    gmess.add((sujeto, ECSDI.grado_festivo, Literal(grado_festivo, datatype=XSD.integer)))
+
+    msg = build_message(gmess, perf=ACL.request,
+                    sender=AgentePlanificador.uri,
+                    receiver=agenteProveedorActividades.uri,
+                    msgcnt=getMessageCount(),
+                    content=sujeto)
+
+    return send_message(msg, agenteProveedorActividades.address)
+    
 
 def planificar_viaje(sujeto, gm):
 
-    diaPartida = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
-    diaRetorno = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
-
-    print(diaPartida)
-    print(diaRetorno)
+    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
+    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
+    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica)
+    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural)
+    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festivo)
 
     # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
 
-    # p1 = Process(target=obtener_actividades, args=(diaPartida,diaRetorno))
-    # p1.start()
+    p1 = Process(target=obtener_actividades, args=(fecha_llegada,fecha_salida,grado_ludica,grado_cultural,grado_festivo))
+    p1.start()
 
     # p2 =
     # p2.start()
@@ -173,7 +195,7 @@ def planificar_viaje(sujeto, gm):
     # p3 = 
     # p3.start()
 
-    # p1.join()
+    p1.join()
     # p2.join()
     # p3.join()
 

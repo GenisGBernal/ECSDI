@@ -16,6 +16,7 @@ import argparse
 from flask import Flask, request
 from rdflib import Graph, Namespace, Literal
 from rdflib.namespace import FOAF, RDF
+import requests
 
 from AgentUtil.ACL import ACL
 from AgentUtil.FlaskServer import shutdown_server
@@ -29,8 +30,18 @@ import socket
 from AgentUtil.ACLMessages import registerAgent
 from AgentUtil.OntoNamespaces import ECSDI
 
+from amadeus import Client, ResponseError
+
 
 __author__ = 'javier'
+
+AMADEUS_KEY = '8zfjCOSbBMc4MgaOkibZ4ydWXxR4mljG'
+AMADEUS_SECRET = 'yGTFfTOPGHNzIIZe'
+
+amadeus = Client(
+    client_id=AMADEUS_KEY,
+    client_secret=AMADEUS_SECRET
+)
 
 # Definimos los parametros de la linea de comandos
 parser = argparse.ArgumentParser()
@@ -50,7 +61,7 @@ args = parser.parse_args()
 
 # Configuration stuff
 if args.port is None:
-    port = 9001
+    port = 9005
 else:
     port = args.port
 
@@ -123,8 +134,29 @@ def register_message():
     gr = registerAgent(AgenteProveedorActividades, AgenteDirectorio, DSO.AgenteProveedorActividades, getMessageCount())
     return gr
 
-def obtener_actividades():
-    grafo
+def obtener_intervalo_actividades(sujeto, gm):
+
+    # fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
+    # fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
+    # grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica)
+    # grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural)
+    # grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festivo)
+
+    # response = amadeus.shopping.activities.get(latitude=41.397896, longitude=2.165111, radius=1)
+
+    # response = amadeus.reference_data.locations.points_of_interest(latitude=41.397896, longitude=2.165111, radius=5)
+
+    response = amadeus.get('/v1/reference-data/locations/pois?latitude=41.397896&longitude=2.165111&radius=5')
+
+    for a in response.data:
+        print("--------------------")
+        print(a["name"])
+
+        # print(a['description'] + '\n')
+        # print(a['shortDescription'] + '\n')
+    
+
+    return build_message(Graph(), ACL['inform'], sender=AgenteProveedorActividades.uri, msgcnt=getMessageCount())
 
 
 @app.route("/iface", methods=['GET', 'POST'])
@@ -172,6 +204,8 @@ def comunicacion():
 
     msgdic = get_message_properties(gm)
 
+    gr = None
+
     # Comprobamos que sea un mensaje FIPA ACL
     if msgdic is None:
         # Si no es, respondemos que no hemos entendido el mensaje
@@ -189,12 +223,12 @@ def comunicacion():
 
             # Averiguamos el tipo de la accion
             if 'content' in msgdic:
-                content = msgdic['content']
-                accion = gm.value(subject=content, predicate=RDF.type)
+                sujeto = msgdic['content']
+                accion = gm.value(subject=sujeto, predicate=RDF.type)
 
-                if accion == ECSDI.ObtenerActividades:
-                    logger.info('Peticion de actividades')
-                    actividades = obtener_actividades()
+                if accion == ECSDI.IntervaloDeActividades:
+                    logger.info('Peticion de intervalo de actividades')
+                    gr = obtener_intervalo_actividades(sujeto, gm)
 
     logger.info('Respondemos a la peticion')
 
@@ -234,7 +268,10 @@ def agentbehavior1(cola):
 
 if __name__ == '__main__':
     # Ponemos en marcha los behaviors
-    ab1 = Process(target=agentbehavior1, args=(cola1,))
+    # ab1 = Process(target=agentbehavior1, args=(cola1,))
+    # ab1.start()
+
+    ab1 = Process(target=obtener_intervalo_actividades, args=("jaja","puto"))
     ab1.start()
 
     # Ponemos en marcha el servidor
