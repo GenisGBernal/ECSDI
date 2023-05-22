@@ -2,3 +2,4 @@ AgenteDirectorio = 9000
 AgenteProveedorActividades = 9001
 AgentePlanificador = 9002
 AgenteContratador = 9003
+AgenteProveedorActividades = 9005
