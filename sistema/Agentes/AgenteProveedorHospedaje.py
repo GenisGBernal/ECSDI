@@ -14,7 +14,7 @@ import logging
 import argparse
 
 from flask import Flask, request
-from rdflib import Graph, Namespace, Literal
+from rdflib import XSD, Graph, Namespace, Literal
 from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
@@ -29,8 +29,15 @@ import socket
 from AgentUtil.ACLMessages import registerAgent
 from AgentUtil.OntoNamespaces import ECSDI
 
+from amadeus import Client, ResponseError
 
-__author__ = 'javier'
+AMADEUS_KEY = 'EiHVAHxxhgGwlEPZTZ4flG42U1x5QvMI'
+AMADEUS_SECRET = 'n32zEDo4N2CAAtLB'
+
+amadeus = Client(
+    client_id=AMADEUS_KEY,
+    client_secret=AMADEUS_SECRET
+)
 
 # Definimos los parametros de la linea de comandos
 parser = argparse.ArgumentParser()
@@ -50,8 +57,7 @@ args = parser.parse_args()
 
 # Configuration stuff
 if args.port is None:
-    # TODO: PONER PUERTO QUE SEA UNICO 
-    port = 9002
+    port = 9004
 else:
     port = args.port
 
@@ -91,8 +97,8 @@ def getMessageCount():
     return mss_cnt
 
 # Datos del Agente
-AgentePlanificador = Agent('AgentePlanificador',
-                                    agn.AgentePlanificador,
+AgenteProveedorHospedaje = Agent('AgenteProveedorHospedaje',
+                                    agn.AgenteProveedorHospedaje,
                                     'http://%s:%d/comm' % (hostaddr, port),
                                     'http://%s:%d/Stop' % (hostaddr, port))
 
@@ -102,8 +108,8 @@ AgenteDirectorio = Agent('AgenteDirectorio',
                        'http://%s:%d/Register' % (dhostname, dport),
                        'http://%s:%d/Stop' % (dhostname, dport))
 
-# Global dsgraph triplestore
-dsgraph = Graph()
+# Global hospedajeDB triplestore
+hospedajeDB = Graph()
 
 # Cola de comunicacion entre procesos
 cola1 = Queue()
@@ -121,8 +127,32 @@ def register_message():
 
     logger.info('Nos registramos')
 
-    gr = registerAgent(AgentePlanificador, AgenteDirectorio, DSO.AgentePlanificador, getMessageCount())
+    gr = registerAgent(AgenteProveedorHospedaje, AgenteDirectorio, DSO.AgenteProveedorHospedaje, getMessageCount())
     return gr
+
+def obtener_hospedaje():
+    grafo
+
+
+def remote_hospedaje_search(cityCode):
+    global hospedajeDB
+
+    # Hotels query
+    #cityCode = 'LON'
+    response = amadeus.reference_data.locations.hotels.by_city.get(cityCode=cityCode)
+    # amadeus.shopping.hotel_offers_search.get(cityCode='LON')
+    city = ECSDI[cityCode]
+    hospedajeDB.add((city, RDF.type, ECSDI.Ciudad))
+    print("TOTAL NUMBER OF HOTELS: " + str(len(response.data)))
+    for h in response.data:
+        hotel_name = h['name']
+        hotel_id = h['hotelId']
+        hospedajeDB.add((ECSDI[hotel_id], RDF.type, ECSDI.Hospedaje))
+        hospedajeDB.add((ECSDI[hotel_id], ECSDI.identificador, Literal(hotel_name, datatype=XSD.string)))
+        hospedajeDB.add((ECSDI[hotel_id], ECSDI.precio, Literal(100, datatype=XSD.float)))
+        hospedajeDB.add((ECSDI[hotel_id], ECSDI.viaje_ciudad, city))
+
+    
 
 
 @app.route("/iface", methods=['GET', 'POST'])
@@ -145,51 +175,6 @@ def stop():
     shutdown_server()
     return "Parando Servidor"
 
-def obtener_hospedaje(primerDia, últimoDia):
-    pass
-
-def obtener_transporte(lugarDePartida, primerDia, últimoDia):
-    pass
-
-def obtener_actividades(primerDia, últimoDia):
-    pass
-
-def planificar_viaje(sujeto, gm):
-
-    diaPartida = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
-    diaRetorno = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
-
-    print(diaPartida)
-    print(diaRetorno)
-
-    # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
-
-    # p1 = Process(target=obtener_actividades, args=(diaPartida,diaRetorno))
-    # p1.start()
-
-    # p2 =
-    # p2.start()
-
-    # p3 = 
-    # p3.start()
-    gmess = Graph()
-    gmess.bind('ECSDI', ECSDI)
-    hospedaje_mess_uri = ECSDI['TomaHospedaje' + str(getMessageCount())]
-    gmess.add((hospedaje_mess_uri, RDF.type, ECSDI.QuieroHospedaje))
-    gmess.add((hospedaje_mess_uri, ECSDI.viaje_ciudad, ECSDI['LON']))
-    response = send_message(build_message(gmess, ACL['request'], sender=AgentePlanificador.uri, content= hospedaje_mess_uri, msgcnt=getMessageCount()) , 'http://buffalo:9004/comm')
-
-    print(response)
-
-
-    # p1.join()
-    # p2.join()
-    # p3.join()
-
-    # TODO: Construir respuesta p1+p2+p3
-
-    return build_message(Graph(), ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount())
-
 
 @app.route("/comm")
 def comunicacion():
@@ -203,10 +188,60 @@ def comunicacion():
     Las acciones se mandan siempre con un Request
     Prodriamos resolver las busquedas usando una performativa de Query-ref
     """
-    global dsgraph
     global mss_cnt
 
     logger.info('Peticion de informacion recibida')
+
+    def process_hospedaje_search():
+        # Recibimos una peticion de busqueda de hospedaje
+
+        logger.info('Peticion de busqueda de hospedaje: ' + city)
+
+        city_search = hospedajeDB.triples((None, ECSDI.viaje_ciudad, city))
+
+        # This will be changed to a conditional
+        try:
+            remote_hospedaje_search('LON')
+        except ResponseError as error:
+            print(error)
+            return build_message(Graph(),
+                                ACL.inform,
+                                sender=AgenteProveedorHospedaje.uri,
+                                msgcnt=mss_cnt)
+        
+        city_search = hospedajeDB.triples((None, ECSDI.viaje_ciudad, city))
+
+        if city_search is not None:
+            hotel_uri = next(city_search)[0]
+            hotel_name = hospedajeDB.value(subject=hotel_uri, predicate=ECSDI.identificador)
+            hotel_price = hospedajeDB.value(subject=hotel_uri, predicate=ECSDI.precio)
+
+            gr = Graph()
+            gr.bind('ECSDI', ECSDI)
+
+            uri_mensaje = ECSDI['TomaHospedaje' + str(getMessageCount())]
+
+            gr.add((hotel_uri, RDF.type, ECSDI.Hospedaje))
+            gr.add((hotel_uri, ECSDI.identificador, Literal(hotel_name, datatype=XSD.string)))
+            gr.add((hotel_uri, ECSDI.precio, Literal(hotel_price, datatype=XSD.float)))
+            gr.add((hotel_uri, ECSDI.viaje_ciudad, city))
+
+
+            gr.add((uri_mensaje, RDF.type, ECSDI.TomaHospedaje))
+            gr.add((uri_mensaje, ECSDI.viaje_hospedaje, hotel_uri))
+
+            logger.info("Hospedaje encontrado: " + hotel_name)
+            return build_message(gr,
+                                 ACL.inform,
+                                 sender=AgenteProveedorHospedaje.uri,
+                                 msgcnt=mss_cnt,
+                                 content=gr)
+        else:
+            # Si no encontramos nada retornamos un inform sin contenido
+            return build_message(Graph(),
+                                ACL.inform,
+                                sender=AgenteProveedorHospedaje.uri,
+                                msgcnt=mss_cnt)
 
     # Extraemos el mensaje y creamos un grafo con el
     message = request.args['content']
@@ -215,32 +250,39 @@ def comunicacion():
 
     msgdic = get_message_properties(gm)
 
-    gr = None
-
     # Comprobamos que sea un mensaje FIPA ACL
     if msgdic is None:
         # Si no es, respondemos que no hemos entendido el mensaje
-        gr = build_message(Graph(), ACL['not-understood'], sender=AgentePlanificador.uri, msgcnt=getMessageCount())
+        gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorHospedaje.uri, msgcnt=getMessageCount())
     else:
         # Obtenemos la performativa
         perf = msgdic['performative']
 
         if perf != ACL.request:
             # Si no es un request, respondemos que no hemos entendido el mensaje
-            gr = build_message(Graph(), ACL['not-understood'], sender=AgentePlanificador.uri, msgcnt=getMessageCount())
+            gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorHospedaje.uri, msgcnt=getMessageCount())
         else:
             # Extraemos el objeto del contenido que ha de ser una accion de la ontologia de acciones del agente
             # de registro
 
             # Averiguamos el tipo de la accion
             if 'content' in msgdic:
-                sujeto = msgdic['content']
-                accion = gm.value(subject=sujeto, predicate=RDF.type)
+                content = msgdic['content']
+                accion = gm.value(subject=content, predicate=RDF.type)
+                city = gm.value(subject=content, predicate=ECSDI.viaje_ciudad)
 
-                if accion == ECSDI.PeticionDeViaje:
-                    logger.info('Peticion de viaje')
-                    gr = planificar_viaje(sujeto, gm)
+                if accion == ECSDI.QuieroHospedaje:
+                    logger.info('Peticion de Hospedaje')
+                    gr = process_hospedaje_search()
+                else:
+                    # Si no es ninguna de las acciones conocidas, respondemos que no hemos entendido el mensaje
+                    gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorHospedaje.uri, msgcnt=getMessageCount())
 
+            else:
+                print('No content')
+                gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorHospedaje.uri, msgcnt=getMessageCount())
+    
+    mss_cnt += 1
     logger.info('Respondemos a la peticion')
 
     return gr.serialize(format='xml')
