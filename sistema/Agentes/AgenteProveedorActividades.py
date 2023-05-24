@@ -156,8 +156,6 @@ def repartir_actividades(grado_ludica, grado_cultural, grado_festivo, n_activida
 
     if diferencia > 0:
         n_actividades_ludicas += diferencia
-    elif diferencia < 0:
-        n_actividades_ludicas -= diferencia
 
     return int(n_actividades_ludicas), int(n_actividades_culturales), int(n_actividades_festivas)
 
