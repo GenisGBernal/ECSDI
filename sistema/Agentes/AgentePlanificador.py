@@ -156,6 +156,7 @@ def obtener_actividades(primerDia, últimoDia):
 
 def planificar_viaje(sujeto, gm):
 
+    global mss_cnt
     diaPartida = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
     diaRetorno = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
 
@@ -164,6 +165,7 @@ def planificar_viaje(sujeto, gm):
 
     # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
     agenteProveedorHospedaje = getAgentInfo(DSO.AgenteProveedorHospedaje, AgenteDirectorio, AgentePlanificador, getMessageCount())
+    mss_cnt += 1
 
     # p1 = Process(target=obtener_actividades, args=(diaPartida,diaRetorno))
     # p1.start()
@@ -175,10 +177,26 @@ def planificar_viaje(sujeto, gm):
     # p3.start()
     gmess = Graph()
     gmess.bind('ECSDI', ECSDI)
-    hospedaje_mess_uri = ECSDI['TomaHospedaje' + str(getMessageCount())]
+    hospedaje_mess_uri = ECSDI['QuieroHospedaje' + str(getMessageCount())]
     gmess.add((hospedaje_mess_uri, RDF.type, ECSDI.QuieroHospedaje))
     gmess.add((hospedaje_mess_uri, ECSDI.viaje_ciudad, ECSDI['LON']))
-    response = send_message(build_message(gmess, ACL['request'], sender=AgentePlanificador.uri, content= hospedaje_mess_uri, msgcnt=getMessageCount()) , agenteProveedorHospedaje.uri)
+
+    response_hosp = send_message(build_message(gmess, ACL['request'], sender=AgentePlanificador.uri, content= hospedaje_mess_uri, msgcnt=getMessageCount()) , agenteProveedorHospedaje.address)
+    mss_cnt += 1
+
+    msgdic_hospedaje = get_message_properties(response_hosp)
+
+    if msgdic_hospedaje is not None and msgdic_hospedaje['performative'] == ACL.inform and 'content' in msgdic_hospedaje:
+        content_hosp = msgdic_hospedaje['content']
+        hotels = response_hosp.triples((content_hosp, ECSDI.viaje_hospedaje, None))
+        for _,_,hotel in hotels:
+            h_name = response_hosp.value(subject=hotel, predicate=ECSDI.identificador)
+            h_price = response_hosp.value(subject=hotel, predicate=ECSDI.precio)
+            print("RESULTADO HOSPEDAJE:", h_name, h_price)
+
+    
+
+    
 
 
     # p1.join()

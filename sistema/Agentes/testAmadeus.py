@@ -43,11 +43,24 @@ try:
     #print(hospedajeDB.serialize(format='turtle'))
 
     search_count = 0
+
+    hotels_in_london = f"""
+    SELECT ?identificador ?precio 
+    WHERE {{
+        ?hospedaje rdf:type ECSDI:Hospedaje;
+                    ECSDI:identificador ?identificador;
+                    ECSDI:precio ?precio;
+                    ECSDI:viaje_ciudad {'<'+city+'>'}.
+    }}   
+    """
+    print(hotels_in_london)
+
+    for s,p in hospedajeDB.query(hotels_in_london, initNs={'ECSDI': ECSDI}):
+        search_count += 1
+        print(s,p)
     # Testing city search
-    city_search = hospedajeDB.triples((None, ECSDI.viaje_ciudad, city))
-    if city_search is not None:
-        for c in city_search:
-            search_count += 1
+    # for a,b,c in hospedajeDB.triples((None, ECSDI.viaje_ciudad, city)):
+    #     print(a,"Is an hotel in",c)
     print("HOTELS IN " + cityCode + ": " + str(search_count))
 
 except ResponseError as error:

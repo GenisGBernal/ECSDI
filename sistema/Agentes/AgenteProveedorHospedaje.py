@@ -157,7 +157,7 @@ def remote_hospedaje_search(cityCode):
 
 @app.route("/iface", methods=['GET', 'POST'])
 def browser_iface():
-    """
+    """content
     Permite la comunicacion con el agente via un navegador
     via un formulario
     """
@@ -197,42 +197,64 @@ def comunicacion():
 
         logger.info('Peticion de busqueda de hospedaje: ' + city)
 
-        city_search = hospedajeDB.triples((None, ECSDI.viaje_ciudad, city))
-        print("CITY SEARCH:", city_search)
+        hotels_in_city = f"""
+        SELECT ?hospedaje ?identificador ?precio 
+        WHERE {{
+            ?hospedaje rdf:type ECSDI:Hospedaje;
+                        ECSDI:identificador ?identificador;
+                        ECSDI:precio ?precio;
+                        ECSDI:viaje_ciudad {'<'+city+'>'}.
+        }}
+        LIMIT 5   
+        """
+
+        
+
+        city_search = hospedajeDB.query(hotels_in_city, initNs={'ECSDI': ECSDI})
+        print("CITY SEARCH:", len(city_search))
 
         # This will be changed to a conditional
-        try:
-            remote_hospedaje_search('LON')
-        except ResponseError as error:
-            print(error)
-            return build_message(Graph(),
-                                ACL.inform,
-                                sender=AgenteProveedorHospedaje.uri,
-                                msgcnt=mss_cnt)
+        if len(city_search) < 5:
+            try:
+                remote_hospedaje_search('LON')
+            except ResponseError as error:
+                print(error)
+                return build_message(Graph(),
+                                    ACL.inform,
+                                    sender=AgenteProveedorHospedaje.uri,
+                                    msgcnt=mss_cnt)
         
-        city_search = hospedajeDB.triples((None, ECSDI.viaje_ciudad, city))
+        city_search = hospedajeDB.query(hotels_in_city, initNs={'ECSDI': ECSDI})
         print("2. CITY SEARCH:", city_search)
 
         if city_search is not None:
-            hotel_uri = next(city_search)[0]
-            hotel_name = hospedajeDB.value(subject=hotel_uri, predicate=ECSDI.identificador)
-            hotel_price = hospedajeDB.value(subject=hotel_uri, predicate=ECSDI.precio)
+            for x in city_search:
+                print("X:", x)
 
+        if city_search is not None:
             gr = Graph()
             gr.bind('ECSDI', ECSDI)
 
             uri_mensaje = ECSDI['TomaHospedaje' + str(getMessageCount())]
-
-            gr.add((hotel_uri, RDF.type, ECSDI.Hospedaje))
-            gr.add((hotel_uri, ECSDI.identificador, Literal(hotel_name, datatype=XSD.string)))
-            gr.add((hotel_uri, ECSDI.precio, Literal(hotel_price, datatype=XSD.float)))
-            gr.add((hotel_uri, ECSDI.viaje_ciudad, city))
-
-
             gr.add((uri_mensaje, RDF.type, ECSDI.TomaHospedaje))
-            gr.add((uri_mensaje, ECSDI.viaje_hospedaje, hotel_uri))
+            for res in city_search:
+                
+                hotel_uri, hotel_name, hotel_price = res
 
-            logger.info("Hospedaje encontrado: " + hotel_name)
+                print("HOTEL URI:", hotel_uri)
+
+                
+
+                gr.add((hotel_uri, RDF.type, ECSDI.Hospedaje))
+                gr.add((hotel_uri, ECSDI.identificador, Literal(hotel_name, datatype=XSD.string)))
+                gr.add((hotel_uri, ECSDI.precio, Literal(hotel_price, datatype=XSD.float)))
+                gr.add((hotel_uri, ECSDI.viaje_ciudad, city))
+
+
+                
+                gr.add((uri_mensaje, ECSDI.viaje_hospedaje, hotel_uri))
+
+                logger.info("Hospedaje encontrado: " + hotel_name)
             return build_message(gr,
                                  ACL.inform,
                                  sender=AgenteProveedorHospedaje.uri,
@@ -251,6 +273,7 @@ def comunicacion():
     gm.parse(data=message, format='xml')
 
     msgdic = get_message_properties(gm)
+    print("I got this message:", gm.serialize(format='turtle'))
 
     # Comprobamos que sea un mensaje FIPA ACL
     if msgdic is None:
