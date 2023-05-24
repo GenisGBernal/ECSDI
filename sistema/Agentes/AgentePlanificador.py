@@ -165,7 +165,7 @@ def obtener_actividades(fecha_llegada, fecha_salida, grado_ludica, grado_cultura
     gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(fecha_salida, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.grado_ludica, Literal(grado_ludica, datatype=XSD.integer)))
     gmess.add((sujeto, ECSDI.grado_cultural, Literal(grado_cultural, datatype=XSD.integer)))
-    gmess.add((sujeto, ECSDI.grado_festivo, Literal(grado_festivo, datatype=XSD.integer)))
+    gmess.add((sujeto, ECSDI.grado_festiva, Literal(grado_festivo, datatype=XSD.integer)))
 
     msg = build_message(gmess, perf=ACL.request,
                     sender=AgentePlanificador.uri,
@@ -182,7 +182,7 @@ def planificar_viaje(sujeto, gm):
     fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
     grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica)
     grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural)
-    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festivo)
+    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva)
 
     # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
 

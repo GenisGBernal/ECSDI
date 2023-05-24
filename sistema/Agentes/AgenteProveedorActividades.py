@@ -9,12 +9,13 @@ Agente que se registra como agente de hoteles y espera peticiones
 @author: javier
 """
 
+from datetime import datetime
 from multiprocessing import Process, Queue
 import logging
 import argparse
 
 from flask import Flask, request
-from rdflib import Graph, Namespace, Literal
+from rdflib import XSD, Graph, Namespace, Literal
 from rdflib.namespace import FOAF, RDF
 import requests
 
@@ -112,8 +113,8 @@ AgenteDirectorio = Agent('AgenteDirectorio',
                        'http://%s:%d/Register' % (dhostname, dport),
                        'http://%s:%d/Stop' % (dhostname, dport))
 
-# Global dsgraph triplestore
-dsgraph = Graph()
+# Global actividadesDB triplestore
+actividadesDB = Graph()
 
 # Cola de comunicacion entre procesos
 cola1 = Queue()
@@ -134,26 +135,92 @@ def register_message():
     gr = registerAgent(AgenteProveedorActividades, AgenteDirectorio, DSO.AgenteProveedorActividades, getMessageCount())
     return gr
 
+def obtener_diferencia_en_dias(fecha1, fecha2):
+    formato = "%Y-%m-%d"
+
+    fecha1_obj = datetime.strptime(fecha1, formato).date()
+    fecha2_obj = datetime.strptime(fecha2, formato).date()
+
+    return abs((fecha2_obj - fecha1_obj).days) + 1
+
+
+def repartir_actividades(grado_ludica, grado_cultural, grado_festivo, n_actividades):
+    total_grado = grado_ludica + grado_cultural + grado_festivo
+
+    n_actividades_ludicas = (grado_ludica / total_grado) * n_actividades
+    n_actividades_culturales = (grado_cultural / total_grado) * n_actividades
+    n_actividades_festivas = (grado_festivo / total_grado) * n_actividades
+
+    suma_partes = int(n_actividades_ludicas) + int(n_actividades_culturales) + int(n_actividades_festivas)
+    diferencia = n_actividades - suma_partes
+
+    if diferencia > 0:
+        n_actividades_ludicas += diferencia
+    elif diferencia < 0:
+        n_actividades_ludicas -= diferencia
+
+    return int(n_actividades_ludicas), int(n_actividades_culturales), int(n_actividades_festivas)
+
+
+def obtener_actividad(tipo_actividad, franja_horaria):
+
+    id_actividades = actividadesDB.query("""
+        SELECT DISTINCT ?id
+        WHERE {
+            ?id ECSDI:tipo_actividad ?tipo .
+            FILTER (?tipo = ?var)
+        }
+    """, 
+    initNs = {'ECSDI', ECSDI},
+    initBindings={'var': tipo_actividad}
+    )
+
+    # TODO: Hacer que elija uno random o por tags
+    primer_resultado = id_actividades.fetchone()
+
+    if primer_resultado:
+        return primer_resultado['id']
+    
+
+    # Preguntar a amadeus
+    # response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE")
+    # registrar en el grafo
+    # devolver nuevo id
+    pass
+
+
+def obtener_actividades_un_dia(tipo_actividad_mañana, tipo_actividad_tarde, tipo_actividad_noche):
+
+    actividad_de_mañana = obtener_actividad(tipo_actividad=tipo_actividad_mañana, franja_horaria=ECSDI.franja_mañana)
+
+    actividad_de_tarde = obtener_actividad(tipo_actividad=tipo_actividad_tarde, franja_horaria=ECSDI.franja_tarde)
+
+    actividad_de_noche = obtener_actividad(tipo_actividad=tipo_actividad_noche, franja_horaria=ECSDI.franja_noche)
+
+    pass
+
+
 def obtener_intervalo_actividades(sujeto, gm):
 
-    # fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
-    # fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
-    # grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica)
-    # grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural)
-    # grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festivo)
+    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
+    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
+    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica)
+    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural)
+    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva)
 
-    # response = amadeus.shopping.activities.get(latitude=41.397896, longitude=2.165111, radius=1)
+    duracion_vacaciones = obtener_diferencia_en_dias(fecha_llegada, fecha_salida)
 
-    # response = amadeus.reference_data.locations.points_of_interest(latitude=41.397896, longitude=2.165111, radius=5)
+    n_actividades = duracion_vacaciones * 3;
 
-    response = amadeus.get('/v1/reference-data/locations/pois?latitude=41.397896&longitude=2.165111&radius=5')
+    n_actividades_ludicas, n_actividades_culturales, n_actividades_festivas = repartir_actividades(grado_ludica, grado_cultural, grado_festivo, n_actividades)
 
-    for a in response.data:
-        print("--------------------")
-        print(a["name"])
+    tipo_actividades = []
+    tipo_actividades.extend([ECSDI.tipo_ludica] * n_actividades_ludicas)
+    tipo_actividades.extend([ECSDI.tipo_cultural] * n_actividades_culturales)
+    tipo_actividades.extend([ECSDI.actividad_festiva] * n_actividades_festivas)
 
-        # print(a['description'] + '\n')
-        # print(a['shortDescription'] + '\n')
+    for i in range(duracion_vacaciones):
+        obtener_actividades_un_dia(tipo_actividades[i*3], tipo_actividades[i*3+1], tipo_actividades[i*3+2])
     
 
     return build_message(Graph(), ACL['inform'], sender=AgenteProveedorActividades.uri, msgcnt=getMessageCount())
