@@ -19,7 +19,7 @@ from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, send_message, get_message_properties
+from AgentUtil.ACLMessages import build_message, getAgentInfo, send_message, get_message_properties
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.DSO import DSO
@@ -163,6 +163,7 @@ def planificar_viaje(sujeto, gm):
     print(diaRetorno)
 
     # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
+    agenteProveedorHospedaje = getAgentInfo(DSO.AgenteProveedorHospedaje, AgenteDirectorio, AgentePlanificador, getMessageCount())
 
     # p1 = Process(target=obtener_actividades, args=(diaPartida,diaRetorno))
     # p1.start()
@@ -177,9 +178,7 @@ def planificar_viaje(sujeto, gm):
     hospedaje_mess_uri = ECSDI['TomaHospedaje' + str(getMessageCount())]
     gmess.add((hospedaje_mess_uri, RDF.type, ECSDI.QuieroHospedaje))
     gmess.add((hospedaje_mess_uri, ECSDI.viaje_ciudad, ECSDI['LON']))
-    response = send_message(build_message(gmess, ACL['request'], sender=AgentePlanificador.uri, content= hospedaje_mess_uri, msgcnt=getMessageCount()) , 'http://buffalo:9004/comm')
-
-    print(response)
+    response = send_message(build_message(gmess, ACL['request'], sender=AgentePlanificador.uri, content= hospedaje_mess_uri, msgcnt=getMessageCount()) , agenteProveedorHospedaje.uri)
 
 
     # p1.join()

@@ -198,6 +198,7 @@ def comunicacion():
         logger.info('Peticion de busqueda de hospedaje: ' + city)
 
         city_search = hospedajeDB.triples((None, ECSDI.viaje_ciudad, city))
+        print("CITY SEARCH:", city_search)
 
         # This will be changed to a conditional
         try:
@@ -210,6 +211,7 @@ def comunicacion():
                                 msgcnt=mss_cnt)
         
         city_search = hospedajeDB.triples((None, ECSDI.viaje_ciudad, city))
+        print("2. CITY SEARCH:", city_search)
 
         if city_search is not None:
             hotel_uri = next(city_search)[0]
@@ -235,7 +237,7 @@ def comunicacion():
                                  ACL.inform,
                                  sender=AgenteProveedorHospedaje.uri,
                                  msgcnt=mss_cnt,
-                                 content=gr)
+                                 content=uri_mensaje,)
         else:
             # Si no encontramos nada retornamos un inform sin contenido
             return build_message(Graph(),
@@ -275,7 +277,7 @@ def comunicacion():
                     logger.info('Peticion de Hospedaje')
                     gr = process_hospedaje_search()
                 else:
-                    # Si no es ninguna de las acciones conocidas, respondemos que no hemos entendido el mensaje
+                    # Si no es ninguna de las acciones conocontentcidas, respondemos que no hemos entendido el mensaje
                     gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorHospedaje.uri, msgcnt=getMessageCount())
 
             else:
@@ -284,6 +286,7 @@ def comunicacion():
     
     mss_cnt += 1
     logger.info('Respondemos a la peticion')
+    print("RESPUESTA: ", gr.serialize(format='turtle'))
 
     return gr.serialize(format='xml')
 

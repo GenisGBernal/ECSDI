@@ -133,6 +133,7 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno):
 
 
     msgdic = get_message_properties(gr)
+    print("As a Contratador, I got this response:",msgdic)
 
 
 @app.route("/iface", methods=['GET', 'POST'])
