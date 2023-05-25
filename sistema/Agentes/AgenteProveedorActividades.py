@@ -160,12 +160,12 @@ def repartir_actividades(grado_ludica, grado_cultural, grado_festivo, n_activida
     return int(n_actividades_ludicas), int(n_actividades_culturales), int(n_actividades_festivas)
 
 
-def obtener_actividad(tipo_actividad, franja_horaria):
+def obtener_actividad(tipo_actividad):
 
     id_actividades = actividadesDB.query("""
-        SELECT DISTINCT ?id
+        SELECT DISTINCT ?sujeto ?
         WHERE {
-            ?id ECSDI:tipo_actividad ?tipo .
+            ?sujeto ECSDI:tipo_actividad ?tipo .
             FILTER (?tipo = ?var)
         }
     """, 
@@ -180,20 +180,30 @@ def obtener_actividad(tipo_actividad, franja_horaria):
         return primer_resultado['id']
     
 
-    # Preguntar a amadeus
-    # response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE")
+
+    if tipo_actividad == ECSDI.tipo_festiva:
+        response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE")
+        for r in response.data:
+            actividadesDB.add((ECSDI['actividad/'+r['id']], RDF.type, ECSDI.actividad))
+            actividadesDB.add((ECSDI['actividad/'+r['id']], ECSDI.tipo_actividad, ECSDI.tipo_festiva))
+            actividadesDB.add((ECSDI['actividad/'+r['id']], ECSDI.subtipo_actividad, Literal(r['subType'], datatype=XSD.string)))
+            actividadesDB.add((ECSDI['actividad/'+r['id']], ECSDI.nombre_actividad, Literal(r['name'], datatype=XSD.string)))
+            for tag in r['tags']:
+                actividadesDB.add((ECSDI['actividad/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
+            
+
     # registrar en el grafo
     # devolver nuevo id
     pass
 
 
-def obtener_actividades_un_dia(tipo_actividad_mañana, tipo_actividad_tarde, tipo_actividad_noche):
+def obtener_actividades_un_dia(tipo_actividad_manana, tipo_actividad_tarde, tipo_actividad_noche):
 
-    actividad_de_mañana = obtener_actividad(tipo_actividad=tipo_actividad_mañana, franja_horaria=ECSDI.franja_mañana)
+    actividad_de_manana = obtener_actividad(tipo_actividad=tipo_actividad_manana)
 
-    actividad_de_tarde = obtener_actividad(tipo_actividad=tipo_actividad_tarde, franja_horaria=ECSDI.franja_tarde)
+    actividad_de_tarde = obtener_actividad(tipo_actividad=tipo_actividad_tarde)
 
-    actividad_de_noche = obtener_actividad(tipo_actividad=tipo_actividad_noche, franja_horaria=ECSDI.franja_noche)
+    actividad_de_noche = obtener_actividad(tipo_actividad=tipo_actividad_noche)
 
     pass
 
@@ -215,10 +225,13 @@ def obtener_intervalo_actividades(sujeto, gm):
     tipo_actividades = []
     tipo_actividades.extend([ECSDI.tipo_ludica] * n_actividades_ludicas)
     tipo_actividades.extend([ECSDI.tipo_cultural] * n_actividades_culturales)
-    tipo_actividades.extend([ECSDI.actividad_festiva] * n_actividades_festivas)
+    tipo_actividades.extend([ECSDI.tipo_festiva] * n_actividades_festivas)
 
     for i in range(duracion_vacaciones):
-        obtener_actividades_un_dia(tipo_actividades[i*3], tipo_actividades[i*3+1], tipo_actividades[i*3+2])
+        obtener_actividades_un_dia(
+            tipo_actividad_manana= tipo_actividades[i*3],
+            tipo_actividad_tarde= tipo_actividades[i*3+1], 
+            tipo_actividad_noche= tipo_actividades[i*3+2])
     
 
     return build_message(Graph(), ACL['inform'], sender=AgenteProveedorActividades.uri, msgcnt=getMessageCount())
