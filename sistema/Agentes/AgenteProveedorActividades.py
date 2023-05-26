@@ -13,6 +13,7 @@ from datetime import datetime
 from multiprocessing import Process, Queue
 import logging
 import argparse
+import random
 
 from flask import Flask, request
 from rdflib import XSD, Graph, Namespace, Literal
@@ -162,7 +163,7 @@ def repartir_actividades(grado_ludica, grado_cultural, grado_festivo, n_activida
 
 def obtener_actividad(tipo_actividad):
 
-    id_actividades = actividadesDB.query("""
+    sujetos_actividades = actividadesDB.query("""
         SELECT DISTINCT ?sujeto ?
         WHERE {
             ?sujeto ECSDI:tipo_actividad ?tipo .
@@ -173,24 +174,51 @@ def obtener_actividad(tipo_actividad):
     initBindings={'var': tipo_actividad}
     )
 
-    # TODO: Hacer que elija uno random o por tags
-    primer_resultado = id_actividades.fetchone()
+    sujeto = None
 
-    if primer_resultado:
-        return primer_resultado['id']
-    
+    if sujetos_actividades is not None:
+        sujeto = random.choice(sujetos_actividades)['sujeto']
 
+    else:
+        if tipo_actividad == ECSDI.tipo_festiva:
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE")
+            sujeto = ECSDI['actividad/festiva/'+random.choice(response.data)['id']]
+            for r in response.data:
+                actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], RDF.type, ECSDI.actividad))
+                actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.tipo_actividad, ECSDI.tipo_festiva))
+                actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.subtipo_actividad, Literal(r['subType'], datatype=XSD.string)))
+                actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.nombre_actividad, Literal(r['name'], datatype=XSD.string)))
+                for tag in r['tags']:
+                    actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
 
-    if tipo_actividad == ECSDI.tipo_festiva:
-        response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE")
-        for r in response.data:
-            actividadesDB.add((ECSDI['actividad/'+r['id']], RDF.type, ECSDI.actividad))
-            actividadesDB.add((ECSDI['actividad/'+r['id']], ECSDI.tipo_actividad, ECSDI.tipo_festiva))
-            actividadesDB.add((ECSDI['actividad/'+r['id']], ECSDI.subtipo_actividad, Literal(r['subType'], datatype=XSD.string)))
-            actividadesDB.add((ECSDI['actividad/'+r['id']], ECSDI.nombre_actividad, Literal(r['name'], datatype=XSD.string)))
-            for tag in r['tags']:
-                actividadesDB.add((ECSDI['actividad/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
-            
+        elif tipo_actividad == ECSDI.tipo_ludica:
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE")
+            sujeto = ECSDI['actividad/ludica/'+random.choice(response.data)['id']]
+            for r in response.data:
+                actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], RDF.type, ECSDI.actividad))
+                actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.tipo_actividad, ECSDI.tipo_ludica))
+                actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.subtipo_actividad, Literal(r['subType'], datatype=XSD.string)))
+                actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.nombre_actividad, Literal(r['name'], datatype=XSD.string)))
+                for tag in r['tags']:
+                    actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
+
+        elif tipo_actividad == ECSDI.tipo_cultural:
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE")
+            sujeto = ECSDI['actividad/cultural/'+random.choice(response.data)['id']]
+            for r in response.data:
+                actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], RDF.type, ECSDI.actividad))
+                actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.tipo_actividad, ECSDI.tipo_cultural))
+                actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.subtipo_actividad, Literal(r['subType'], datatype=XSD.string)))
+                actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.nombre_actividad, Literal(r['name'], datatype=XSD.string)))
+                for tag in r['tags']:
+                    actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
+        
+    gr = Graph()
+    IAA = Namespace('IAActions')
+    gr.bind('foaf', FOAF)
+    gr.bind('iaa', IAA)
+    gr.add((sujeto, RDF.type, ECSDI.actividad))    
+    gr. 
 
     # registrar en el grafo
     # devolver nuevo id
