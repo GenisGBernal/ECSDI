@@ -197,15 +197,29 @@ def obtener_actividad(tipo_actividad):
     pass
 
 
-def obtener_actividades_un_dia(tipo_actividad_manana, tipo_actividad_tarde, tipo_actividad_noche):
+def obtener_actividades_un_dia(dia, tipo_actividad_manana, tipo_actividad_tarde, tipo_actividad_noche):
 
-    actividad_de_manana = obtener_actividad(tipo_actividad=tipo_actividad_manana)
+    gr = Graph()
+    IAA = Namespace('IAActions')
+    gr.bind('foaf', FOAF)
+    gr.bind('iaa', IAA)
+    sujeto = ECSDI['ActividadesUnDia-' + str(getMessageCount())]
+    gr.add((sujeto, RDF.type, ECSDI.actividades_ordenadas))
+    gr.add((sujeto, ECSDI.dia, dia))
 
-    actividad_de_tarde = obtener_actividad(tipo_actividad=tipo_actividad_tarde)
+    gr_actividad_de_manana = obtener_actividad(tipo_actividad=tipo_actividad_manana)
+    sujeto_actividad_de_manana = gr_actividad_de_manana.value(predicate=RDF.type, object=ECSDI.actividad)
+    gr.add((sujeto_actividad_de_manana, RDF.type, ECSDI.actividad_manana))
 
-    actividad_de_noche = obtener_actividad(tipo_actividad=tipo_actividad_noche)
+    gr_actividad_de_tarde = obtener_actividad(tipo_actividad=tipo_actividad_tarde)
+    sujeto_actividad_de_tarde = gr_actividad_de_tarde.value(predicate=RDF.type, object=ECSDI.actividad)
+    gr.add((sujeto_actividad_de_tarde, RDF.type, ECSDI.actividad_tarde))
 
-    pass
+    gr_actividad_de_noche = obtener_actividad(tipo_actividad=tipo_actividad_noche)
+    sujeto_actividad_de_noche = gr_actividad_de_noche.value(predicate=RDF.type, object=ECSDI.actividad)
+    gr.add((sujeto_actividad_de_noche, RDF.type, ECSDI.actividad_noche))
+
+    return gr + gr_actividad_de_manana + gr_actividad_de_tarde + gr_actividad_de_manana
 
 
 def obtener_intervalo_actividades(sujeto, gm):
@@ -229,6 +243,7 @@ def obtener_intervalo_actividades(sujeto, gm):
 
     for i in range(duracion_vacaciones):
         obtener_actividades_un_dia(
+            dia = i+1,
             tipo_actividad_manana= tipo_actividades[i*3],
             tipo_actividad_tarde= tipo_actividades[i*3+1], 
             tipo_actividad_noche= tipo_actividades[i*3+2])
