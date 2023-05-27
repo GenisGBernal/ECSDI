@@ -156,32 +156,41 @@ def repartir_actividades(grado_ludica, grado_cultural, grado_festivo, n_activida
     diferencia = n_actividades - suma_partes
 
     if diferencia > 0:
-        n_actividades_ludicas += diferencia
+        if n_actividades_ludicas > 0:
+            n_actividades_ludicas += diferencia
+        elif n_actividades_culturales > 0:
+            n_actividades_culturales += diferencia
+        else:
+            n_actividades_festivas += diferencia
 
     return int(n_actividades_ludicas), int(n_actividades_culturales), int(n_actividades_festivas)
 
 
 def obtener_actividad(tipo_actividad):
 
-    sujetos_actividades = actividadesDB.query("""
-        SELECT DISTINCT ?sujeto ?
+    global actividadesDB
+
+    sujetos_actividades = list(actividadesDB.query("""
+        SELECT DISTINCT ?sujeto
         WHERE {
             ?sujeto ECSDI:tipo_actividad ?tipo .
             FILTER (?tipo = ?var)
         }
     """, 
-    initNs = {'ECSDI', ECSDI},
+    initNs = {'ECSDI': ECSDI},
     initBindings={'var': tipo_actividad}
-    )
+    ))
 
     sujeto = None
 
-    if sujetos_actividades is not None:
-        sujeto = random.choice(sujetos_actividades)['sujeto']
+    if len(sujetos_actividades) > 0:
+        logger.info('Busqueda en cache de actividad tipo: ' + tipo_actividad)
+        sujeto = random.choice(sujetos_actividades)[0]
 
     else:
+        logger.info('Busqueda en amadeus de actividad tipo: ' + tipo_actividad)
         if tipo_actividad == ECSDI.tipo_festiva:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE")
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE", page=100)
             sujeto = ECSDI['actividad/festiva/'+random.choice(response.data)['id']]
             for r in response.data:
                 actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], RDF.type, ECSDI.actividad))
@@ -192,7 +201,7 @@ def obtener_actividad(tipo_actividad):
                     actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
 
         elif tipo_actividad == ECSDI.tipo_ludica:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE")
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="SHOPPING", page=100)
             sujeto = ECSDI['actividad/ludica/'+random.choice(response.data)['id']]
             for r in response.data:
                 actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], RDF.type, ECSDI.actividad))
@@ -203,7 +212,7 @@ def obtener_actividad(tipo_actividad):
                     actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
 
         elif tipo_actividad == ECSDI.tipo_cultural:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE")
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="SIGHTS", page=100)
             sujeto = ECSDI['actividad/cultural/'+random.choice(response.data)['id']]
             for r in response.data:
                 actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], RDF.type, ECSDI.actividad))
@@ -218,11 +227,13 @@ def obtener_actividad(tipo_actividad):
     gr.bind('foaf', FOAF)
     gr.bind('iaa', IAA)
     gr.add((sujeto, RDF.type, ECSDI.actividad))    
-    gr. 
+    gr.add((sujeto, ECSDI.tipo_actividad, actividadesDB.value(subject=sujeto, predicate=ECSDI.tipo_actividad)))
+    gr.add((sujeto, ECSDI.subtipo_actividad, actividadesDB.value(subject=sujeto, predicate=ECSDI.subtipo_actividad)))
+    gr.add((sujeto, ECSDI.nombre_actividad, actividadesDB.value(subject=sujeto, predicate=ECSDI.nombre_actividad)))
+    for _, _, tag in actividadesDB.triples((sujeto, ECSDI.tag_actividad, None)):
+        gr.add((sujeto, ECSDI.tag_actividad, tag))
 
-    # registrar en el grafo
-    # devolver nuevo id
-    pass
+    return gr
 
 
 def obtener_actividades_un_dia(dia, tipo_actividad_manana, tipo_actividad_tarde, tipo_actividad_noche):
@@ -233,7 +244,7 @@ def obtener_actividades_un_dia(dia, tipo_actividad_manana, tipo_actividad_tarde,
     gr.bind('iaa', IAA)
     sujeto = ECSDI['ActividadesUnDia-' + str(getMessageCount())]
     gr.add((sujeto, RDF.type, ECSDI.actividades_ordenadas))
-    gr.add((sujeto, ECSDI.dia, dia))
+    gr.add((sujeto, ECSDI.dia, Literal(dia, datatype=XSD.integer)))
 
     gr_actividad_de_manana = obtener_actividad(tipo_actividad=tipo_actividad_manana)
     sujeto_actividad_de_manana = gr_actividad_de_manana.value(predicate=RDF.type, object=ECSDI.actividad)
@@ -247,16 +258,22 @@ def obtener_actividades_un_dia(dia, tipo_actividad_manana, tipo_actividad_tarde,
     sujeto_actividad_de_noche = gr_actividad_de_noche.value(predicate=RDF.type, object=ECSDI.actividad)
     gr.add((sujeto_actividad_de_noche, RDF.type, ECSDI.actividad_noche))
 
-    return gr + gr_actividad_de_manana + gr_actividad_de_tarde + gr_actividad_de_manana
+    return gr + gr_actividad_de_manana + gr_actividad_de_tarde + gr_actividad_de_noche
 
 
 def obtener_intervalo_actividades(sujeto, gm):
 
-    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
-    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
-    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica)
-    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural)
-    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva)
+    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida).toPython()
+    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno).toPython()
+    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica).toPython()
+    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural).toPython()
+    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva).toPython()
+
+    logger.info("Fecha llegada: " + fecha_llegada)
+    logger.info("Fecha salida: " + fecha_salida)
+    logger.info("Grado festivo: " + str(grado_festivo))
+    logger.info("Grado cultural: " + str(grado_cultural))
+    logger.info("Grado ludica: " + str(grado_ludica))
 
     duracion_vacaciones = obtener_diferencia_en_dias(fecha_llegada, fecha_salida)
 
@@ -264,20 +281,34 @@ def obtener_intervalo_actividades(sujeto, gm):
 
     n_actividades_ludicas, n_actividades_culturales, n_actividades_festivas = repartir_actividades(grado_ludica, grado_cultural, grado_festivo, n_actividades)
 
+    logger.info("Duración vacaciones: " + str(duracion_vacaciones))
+    logger.info("N festivo: " + str(n_actividades_festivas))
+    logger.info("N cultural: " + str(n_actividades_culturales))
+    logger.info("N ludicas: " + str(n_actividades_ludicas))
+
     tipo_actividades = []
     tipo_actividades.extend([ECSDI.tipo_ludica] * n_actividades_ludicas)
     tipo_actividades.extend([ECSDI.tipo_cultural] * n_actividades_culturales)
     tipo_actividades.extend([ECSDI.tipo_festiva] * n_actividades_festivas)
+    random.shuffle(tipo_actividades)
+
+    gr = Graph()
+    IAA = Namespace('IAActions')
+    gr.bind('foaf', FOAF)
+    gr.bind('iaa', IAA)
+    sujeto = ECSDI['IntervaloDeActividades-' + str(getMessageCount())]
+    gr.add((sujeto, RDF.type, ECSDI.viaje_actividades))
 
     for i in range(duracion_vacaciones):
-        obtener_actividades_un_dia(
+        gr += obtener_actividades_un_dia(
             dia = i+1,
             tipo_actividad_manana= tipo_actividades[i*3],
             tipo_actividad_tarde= tipo_actividades[i*3+1], 
             tipo_actividad_noche= tipo_actividades[i*3+2])
-    
+        
+    print(gr.serialize(format='turtle'))
 
-    return build_message(Graph(), ACL['inform'], sender=AgenteProveedorActividades.uri, msgcnt=getMessageCount())
+    return build_message(gr, ACL['inform'], sender=AgenteProveedorActividades.uri, msgcnt=getMessageCount(), content=sujeto)
 
 
 @app.route("/iface", methods=['GET', 'POST'])
@@ -392,7 +423,7 @@ if __name__ == '__main__':
     # ab1 = Process(target=agentbehavior1, args=(cola1,))
     # ab1.start()
 
-    ab1 = Process(target=obtener_intervalo_actividades, args=("jaja","puto"))
+    ab1 = Process(target=agentbehavior1, args=(cola1,))
     ab1.start()
 
     # Ponemos en marcha el servidor

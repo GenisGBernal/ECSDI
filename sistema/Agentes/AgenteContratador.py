@@ -151,13 +151,13 @@ def browser_iface():
     else:
         usuario = request.form['Usuario']
         lugarDePartida = request.form['LugarDePartida']
-        diaSalida = request.form['DiaDePartida']
+        diaPartida = request.form['DiaDePartida']
         diaRetorno = request.form['DiaDeRetorno']
         grado_ludica = request.form['grado_ludica']
         grado_cultural = request.form['grado_cultural']
         grado_festivo = request.form['grado_festivo']
 
-        if diaRetorno < diaSalida:
+        if diaRetorno < diaPartida:
             return render_template('iface.html', error_message='La fecha de retorno no puede ser anterior a la de salida')
         
         if grado_ludica + grado_cultural + grado_festivo == 0:
@@ -166,7 +166,7 @@ def browser_iface():
         generar_peticion_de_viaje(
             usuario=usuario, 
             lugarDePartida=lugarDePartida, 
-            diaSalida=diaSalida, 
+            diaPartida=diaPartida, 
             diaRetorno=diaRetorno, 
             grado_ludica=grado_ludica, 
             grado_cultural=grado_cultural, 

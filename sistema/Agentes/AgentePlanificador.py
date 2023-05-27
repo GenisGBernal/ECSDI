@@ -178,11 +178,17 @@ def obtener_actividades(fecha_llegada, fecha_salida, grado_ludica, grado_cultura
 
 def planificar_viaje(sujeto, gm):
 
-    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
-    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
-    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica)
-    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural)
-    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva)
+    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida).toPython()
+    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno).toPython()
+    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica).toPython()
+    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural).toPython()
+    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva).toPython()
+
+    logger.info("Fecha llegada: " + fecha_llegada)
+    logger.info("Fecha salida: " + fecha_salida)
+    logger.info("Grado festivo: " + str(grado_festivo))
+    logger.info("Grado cultural: " + str(grado_cultural))
+    logger.info("Grado ludica: " + str(grado_ludica))
 
     # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
 
