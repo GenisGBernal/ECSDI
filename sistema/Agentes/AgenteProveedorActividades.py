@@ -242,7 +242,7 @@ def obtener_actividades_un_dia(dia, tipo_actividad_manana, tipo_actividad_tarde,
     IAA = Namespace('IAActions')
     gr.bind('foaf', FOAF)
     gr.bind('iaa', IAA)
-    sujeto = ECSDI['ActividadesUnDia-' + str(getMessageCount())]
+    sujeto = ECSDI['ActividadesParaUnDia-' + str(getMessageCount())]
     gr.add((sujeto, RDF.type, ECSDI.actividades_ordenadas))
     gr.add((sujeto, ECSDI.dia, Literal(dia, datatype=XSD.integer)))
 

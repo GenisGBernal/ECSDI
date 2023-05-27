@@ -133,10 +133,7 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, g
                         content=sujeto)
     
     log.info("Petición de viaje al AgentePlanificador")
-    gr = send_message(msg, agentePlanificador.address)
-
-
-    msgdic = get_message_properties(gr)
+    return send_message(msg, agentePlanificador.address)
 
 
 @app.route("/iface", methods=['GET', 'POST'])
@@ -163,7 +160,7 @@ def browser_iface():
         if grado_ludica + grado_cultural + grado_festivo == 0:
             return render_template('iface.html', error_message='Se debe escoger un mínimo de algo en algun tipo de actividad')
 
-        generar_peticion_de_viaje(
+        gr = generar_peticion_de_viaje(
             usuario=usuario, 
             lugarDePartida=lugarDePartida, 
             diaPartida=diaPartida, 
@@ -172,7 +169,8 @@ def browser_iface():
             grado_cultural=grado_cultural, 
             grado_festivo=grado_festivo)
         
-
+        print(gr.serialize(format="turtle"))
+        
         
         return render_template('riface.html', user="hoa", mess="df")
 

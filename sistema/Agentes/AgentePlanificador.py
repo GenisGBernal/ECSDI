@@ -19,7 +19,7 @@ from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, send_message, get_message_properties, getAgentInfo
+from AgentUtil.ACLMessages import build_message, send_message, get_message_properties, getAgentInfo, clean_graph
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.DSO import DSO
@@ -106,7 +106,7 @@ AgenteDirectorio = Agent('AgenteDirectorio',
 dsgraph = Graph()
 
 # Cola de comunicacion entre procesos
-cola1 = Queue()
+cola_actividades = Queue()
 
 
 def register_message():
@@ -151,7 +151,7 @@ def obtener_hospedaje(primerDia, últimoDia):
 def obtener_transporte(lugarDePartida, primerDia, últimoDia):
     pass
 
-def obtener_actividades(fecha_llegada, fecha_salida, grado_ludica, grado_cultural, grado_festivo):
+def obtener_actividades(cola, fecha_llegada, fecha_salida, grado_ludica, grado_cultural, grado_festivo):
     
     agenteProveedorActividades = getAgentInfo(DSO.AgenteProveedorActividades, AgenteDirectorio, AgentePlanificador, getMessageCount())
     
@@ -173,7 +173,9 @@ def obtener_actividades(fecha_llegada, fecha_salida, grado_ludica, grado_cultura
                     msgcnt=getMessageCount(),
                     content=sujeto)
 
-    return send_message(msg, agenteProveedorActividades.address)
+    gr = send_message(msg, agenteProveedorActividades.address)
+
+    cola.put(gr.serialize(format='xml'))
     
 
 def planificar_viaje(sujeto, gm):
@@ -192,7 +194,7 @@ def planificar_viaje(sujeto, gm):
 
     # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
 
-    p1 = Process(target=obtener_actividades, args=(fecha_llegada,fecha_salida,grado_ludica,grado_cultural,grado_festivo))
+    p1 = Process(target=obtener_actividades, args=(cola_actividades, fecha_llegada,fecha_salida,grado_ludica,grado_cultural,grado_festivo))
     p1.start()
 
     # p2 =
@@ -205,9 +207,20 @@ def planificar_viaje(sujeto, gm):
     # p2.join()
     # p3.join()
 
-    # TODO: Construir respuesta p1+p2+p3
+    g_actividades = Graph()
+    g_actividades.parse(data=cola_actividades.get(), format='xml')
+    g_actividades = clean_graph(g_actividades)
 
-    return build_message(Graph(), ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount())
+    gmess = Graph()
+    IAA = Namespace('IAActions')
+    gmess.bind('foaf', FOAF)
+    gmess.bind('iaa', IAA)
+    sujeto = agn['planificador/PlanificacionDeViaje-' + str(getMessageCount())]
+    gmess.add((sujeto, RDF.type, ECSDI.tiene_viaje))
+
+    gmess += g_actividades
+
+    return build_message(gmess, ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount(), content=sujeto)
 
 
 @app.route("/comm")
@@ -270,11 +283,8 @@ def tidyup():
     Acciones previas a parar el agente
 
     """
-    global cola1
-    cola1.put(0)
 
-
-def agentbehavior1(cola):
+def agentbehavior1():
     """
     Un comportamiento del agente
 
@@ -283,22 +293,10 @@ def agentbehavior1(cola):
     # Registramos el agente
     gr = register_message()
 
-    # Escuchando la cola hasta que llegue un 0
-    fin = False
-    while not fin:
-        while cola.empty():
-            pass
-        v = cola.get()
-        if v == 0:
-            fin = True
-        else:
-            print(v)
-
-
 
 if __name__ == '__main__':
     # Ponemos en marcha los behaviors
-    ab1 = Process(target=agentbehavior1, args=(cola1,))
+    ab1 = Process(target=agentbehavior1, args=())
     ab1.start()
 
     # Ponemos en marcha el servidor
