@@ -190,7 +190,7 @@ def obtener_actividad(tipo_actividad):
     else:
         logger.info('Busqueda en amadeus de actividad tipo: ' + tipo_actividad)
         if tipo_actividad == ECSDI.tipo_festiva:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="NIGHTLIFE", page=100)
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=7, categories="NIGHTLIFE", page=70)
             sujeto = ECSDI['actividad/festiva/'+random.choice(response.data)['id']]
             for r in response.data:
                 actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], RDF.type, ECSDI.actividad))
@@ -201,7 +201,7 @@ def obtener_actividad(tipo_actividad):
                     actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
 
         elif tipo_actividad == ECSDI.tipo_ludica:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="SHOPPING", page=100)
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=7, categories="SHOPPING", page=70)
             sujeto = ECSDI['actividad/ludica/'+random.choice(response.data)['id']]
             for r in response.data:
                 actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], RDF.type, ECSDI.actividad))
@@ -212,7 +212,7 @@ def obtener_actividad(tipo_actividad):
                     actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
 
         elif tipo_actividad == ECSDI.tipo_cultural:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=5, categories="SIGHTS", page=100)
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=7, categories="SIGHTS", page=70)
             sujeto = ECSDI['actividad/cultural/'+random.choice(response.data)['id']]
             for r in response.data:
                 actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], RDF.type, ECSDI.actividad))
@@ -248,15 +248,15 @@ def obtener_actividades_un_dia(dia, tipo_actividad_manana, tipo_actividad_tarde,
 
     gr_actividad_de_manana = obtener_actividad(tipo_actividad=tipo_actividad_manana)
     sujeto_actividad_de_manana = gr_actividad_de_manana.value(predicate=RDF.type, object=ECSDI.actividad)
-    gr.add((sujeto_actividad_de_manana, RDF.type, ECSDI.actividad_manana))
+    gr.add((sujeto, ECSDI.actividad_manana, sujeto_actividad_de_manana))
 
     gr_actividad_de_tarde = obtener_actividad(tipo_actividad=tipo_actividad_tarde)
     sujeto_actividad_de_tarde = gr_actividad_de_tarde.value(predicate=RDF.type, object=ECSDI.actividad)
-    gr.add((sujeto_actividad_de_tarde, RDF.type, ECSDI.actividad_tarde))
+    gr.add((sujeto, ECSDI.actividad_tarde, sujeto_actividad_de_tarde))
 
     gr_actividad_de_noche = obtener_actividad(tipo_actividad=tipo_actividad_noche)
     sujeto_actividad_de_noche = gr_actividad_de_noche.value(predicate=RDF.type, object=ECSDI.actividad)
-    gr.add((sujeto_actividad_de_noche, RDF.type, ECSDI.actividad_noche))
+    gr.add((sujeto, ECSDI.actividad_noche, sujeto_actividad_de_noche))
 
     return gr + gr_actividad_de_manana + gr_actividad_de_tarde + gr_actividad_de_noche
 

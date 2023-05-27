@@ -37,8 +37,21 @@
         <button type="submit">Send</button>
     </p>
 </form>
-{% if graph %}
-    {{ graph }}
+{% if actividades %}
+    <ul>
+        {% for dia in actividades %}
+        <li>Dia: {{dia.dia}}</li>
+        <ul>
+            {% for actividad in dia.actividades %}
+                <li>Franja: {{actividad.franja}}</li>
+                <ul>
+                    <li>Título: {{actividad.nombre}}</li>
+                    <li>Tipo de actividad: {{actividad.tipo_actividad}}</li>
+                </ul>
+            {% endfor %}
+        </ul>
+        {% endfor %}
+    </ul>
 {% endif %}
 </body>
 </html>

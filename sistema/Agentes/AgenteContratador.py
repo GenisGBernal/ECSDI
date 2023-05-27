@@ -106,6 +106,54 @@ DirectoryAgent = Agent('DirectoryAgent',
 # Global dsgraph triplestore
 dsgraph = Graph()
 
+def obtener_info_actividad(sujeto, g, franja):
+    nombre = g.value(subject=sujeto, predicate=ECSDI.nombre_actividad).toPython()
+    tipo_actividad = g.value(subject=sujeto, predicate=ECSDI.tipo_actividad).toPython()
+    subtipo_actividad = g.value(subject=sujeto, predicate=ECSDI.subtipo_actividad).toPython()
+
+    if tipo_actividad == ECSDI.tipo_ludica:
+        tipo_actividad = 'Lúdica'
+    elif tipo_actividad == ECSDI.tipo_cultural:
+        tipo_actividad = 'Cultural'    
+    else:
+        tipo_actividad = 'Festiva'
+
+    return {
+        'franja': franja,
+        'nombre': nombre,
+        'tipo_actividad': tipo_actividad,
+        'subtipo_actividad': subtipo_actividad
+    }
+
+def obtener_actividades(grafo_viaje):
+
+    lista_actividades_completa = []
+    for sujeto_dia_actividad_ordenada, _, _ in grafo_viaje.triples((None, RDF.type, ECSDI.actividades_ordenadas)):
+
+        lista_actividades_un_dia = []
+
+        sujeto_actividad_manana = grafo_viaje.value(subject=sujeto_dia_actividad_ordenada, predicate=ECSDI.actividad_manana)
+        actividad_mañana = obtener_info_actividad(sujeto_actividad_manana, grafo_viaje, 'mañana')
+        lista_actividades_un_dia.append(actividad_mañana)
+
+        sujeto_actividad_tarde = grafo_viaje.value(subject=sujeto_dia_actividad_ordenada, predicate=ECSDI.actividad_tarde)
+        actividad_tarde = obtener_info_actividad(sujeto_actividad_tarde, grafo_viaje, 'tarde')
+        lista_actividades_un_dia.append(actividad_tarde)
+
+        sujeto_actividad_noche = grafo_viaje.value(subject=sujeto_dia_actividad_ordenada, predicate=ECSDI.actividad_noche)
+        actividad_noche = obtener_info_actividad(sujeto_actividad_noche, grafo_viaje, 'noche')
+        lista_actividades_un_dia.append(actividad_noche)
+
+        actividad_un_dia = {
+            'dia':  grafo_viaje.value(subject=sujeto_dia_actividad_ordenada, predicate=ECSDI.dia).toPython(),
+            'actividades': lista_actividades_un_dia
+        }
+        lista_actividades_completa.append(actividad_un_dia)
+
+    lista_actividades_completa = sorted(lista_actividades_completa, key=lambda x: x['dia'])
+
+    return lista_actividades_completa
+
 
 def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, grado_ludica, grado_cultural, grado_festivo):
 
@@ -171,7 +219,12 @@ def browser_iface():
             grado_cultural=grado_cultural, 
             grado_festivo=grado_festivo)
         
-        return render_template('iface.html', graph=gr.serialize(format="turtle"))
+        print(gr.serialize(format='turtle'))
+        
+        
+        actividades = obtener_actividades(gr)
+
+        return render_template('iface.html', actividades=actividades)
 
 
 @app.route("/stop")
