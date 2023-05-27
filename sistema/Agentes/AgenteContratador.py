@@ -133,7 +133,9 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, g
                         content=sujeto)
     
     log.info("Petición de viaje al AgentePlanificador")
-    return send_message(msg, agentePlanificador.address)
+    gr = send_message(msg, agentePlanificador.address)
+    log.info("Respuesta recibida")
+    return gr
 
 
 @app.route("/iface", methods=['GET', 'POST'])
@@ -169,10 +171,7 @@ def browser_iface():
             grado_cultural=grado_cultural, 
             grado_festivo=grado_festivo)
         
-        print(gr.serialize(format="turtle"))
-        
-        
-        return render_template('riface.html', user="hoa", mess="df")
+        return render_template('iface.html', graph=gr.serialize(format="turtle"))
 
 
 @app.route("/stop")

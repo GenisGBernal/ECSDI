@@ -9,7 +9,7 @@ Agente que se registra como agente de hoteles y espera peticiones
 @author: javier
 """
 
-from multiprocessing import Process, Queue
+from multiprocessing import Pipe, Process, Queue
 import logging
 import argparse
 
@@ -105,10 +105,6 @@ AgenteDirectorio = Agent('AgenteDirectorio',
 # Global dsgraph triplestore
 dsgraph = Graph()
 
-# Cola de comunicacion entre procesos
-cola_actividades = Queue()
-
-
 def register_message():
     """
     Envia un mensaje de registro al servicio de registro
@@ -151,7 +147,9 @@ def obtener_hospedaje(primerDia, últimoDia):
 def obtener_transporte(lugarDePartida, primerDia, últimoDia):
     pass
 
-def obtener_actividades(cola, fecha_llegada, fecha_salida, grado_ludica, grado_cultural, grado_festivo):
+def obtener_actividades(p_salida, fecha_llegada, fecha_salida, grado_ludica, grado_cultural, grado_festivo):
+
+    global g_actividades
     
     agenteProveedorActividades = getAgentInfo(DSO.AgenteProveedorActividades, AgenteDirectorio, AgentePlanificador, getMessageCount())
     
@@ -168,14 +166,16 @@ def obtener_actividades(cola, fecha_llegada, fecha_salida, grado_ludica, grado_c
     gmess.add((sujeto, ECSDI.grado_festiva, Literal(grado_festivo, datatype=XSD.integer)))
 
     msg = build_message(gmess, perf=ACL.request,
-                    sender=AgentePlanificador.uri,
-                    receiver=agenteProveedorActividades.uri,
-                    msgcnt=getMessageCount(),
-                    content=sujeto)
+                        sender=AgentePlanificador.uri,
+                        receiver=agenteProveedorActividades.uri,
+                        msgcnt=getMessageCount(),
+                        content=sujeto)
 
     gr = send_message(msg, agenteProveedorActividades.address)
+    g_actividades = clean_graph(gr)
 
-    cola.put(gr.serialize(format='xml'))
+    p_salida.send(gr.serialize(format='xml'))
+    p_salida.close()
     
 
 def planificar_viaje(sujeto, gm):
@@ -194,7 +194,8 @@ def planificar_viaje(sujeto, gm):
 
     # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
 
-    p1 = Process(target=obtener_actividades, args=(cola_actividades, fecha_llegada,fecha_salida,grado_ludica,grado_cultural,grado_festivo))
+    p_actividades_salida, p_actividades_entrada = Pipe()
+    p1 = Process(target=obtener_actividades, args=(p_actividades_entrada, fecha_llegada,fecha_salida,grado_ludica,grado_cultural,grado_festivo))
     p1.start()
 
     # p2 =
@@ -203,13 +204,12 @@ def planificar_viaje(sujeto, gm):
     # p3 = 
     # p3.start()
 
+    g_actividades = Graph()
+    g_actividades.parse(data=p_actividades_salida.recv(), format='xml')
+
     p1.join()
     # p2.join()
     # p3.join()
-
-    g_actividades = Graph()
-    g_actividades.parse(data=cola_actividades.get(), format='xml')
-    g_actividades = clean_graph(g_actividades)
 
     gmess = Graph()
     IAA = Namespace('IAActions')
