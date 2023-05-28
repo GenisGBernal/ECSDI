@@ -87,7 +87,8 @@ try:
         departureDate=departureDate,
         returnDate=returnDate,
         adults=1,
-        currencyCode=currency)
+        currencyCode=currency,
+        max=1)
 
     transporte = ECSDI[transport]
     ciudadSalida = ECSDI[cityDeparture]
@@ -101,18 +102,16 @@ try:
     #     if a == "malaga":
     #         transporteDB.get((a, ECSDI.fecha))
 
-    transporteDB.add(ciudadSalida, RDF.type, ECSDI.Ciudad)
-    transporteDB.add(ciudadSalida, ECSDI.fecha_salida, literal)
-
+    transporteDB.add((fechaSalida, RDF.type, ECSDI.Fecha))
+    transporteDB.add((fechaLlegada, RDF.type, ECSDI.Fecha))
     transporteDB.add((ciudadSalida, RDF.type, ECSDI.Ciudad))
     transporteDB.add((ciudadLlegada, RDF.type, ECSDI.Ciudad))
     transporteDB.add((transporte, RDF.type, ECSDI.Transporte))
 
     print("TOTAL NUMBER OF FLIGHTS: " + str(len(response.data)))
     for f in response.data:
-        # El ID no es unico
         flight_id = '{cityDepart}_{cityArrival}_{dateDepart}_{dateArrival}_{airlineCode}'.format(
-            cityDepart=cityCode, cityArrival='BCN', dateDepart=departureDate,
+            cityDepart=cityDeparture, cityArrival='BCN', dateDepart=departureDate,
             dateArrival=returnDate, airlineCode = f['itineraries'][0]['segments'][0]['carrierCode'])
         flight_price= f['price']['total']
 
@@ -120,38 +119,39 @@ try:
         transporteDB.add((ECSDI[flight_id], ECSDI.identificador, Literal(flight_id, datatype=XSD.string)))
         transporteDB.add((ECSDI[flight_id], ECSDI.precio, Literal(flight_price, datatype=XSD.float)))
         transporteDB.add((ECSDI[flight_id], ECSDI.viaje_transporte, transporte))
-        transporteDB.add((ECSDI[flight_id], ECSDI.localizacionSalida, ciudadSalida))
-        transporteDB.add((ECSDI[flight_id], ECSDI.localizacionLlegada, ciudadLlegada))
-        transporteDB.add((ECSDI[flight_id], ECSDI.fechaSalida, ciudadLlegada))
-        transporteDB.add((ECSDI[flight_id], ECSDI.fechaLlegada, ciudadLlegada))
+        transporteDB.add((ECSDI[flight_id], ECSDI.ciudadSalida, ciudadSalida))
+        transporteDB.add((ECSDI[flight_id], ECSDI.ciudadLlegada, ciudadLlegada))
+        transporteDB.add((ECSDI[flight_id], ECSDI.fechaSalida, fechaSalida))
+        transporteDB.add((ECSDI[flight_id], ECSDI.fechaLlegada, fechaLlegada))
 
     print(transporteDB.serialize(format='turtle'))
 
     search_count = 0
 
-    queryTemplate = Template('''\
+    query = f"""
     SELECT ?id ?precio
-    WHERE {
-        ?transporte rdf:type ECSDI:BilleteIdaYVuelta ;
-        ?id ECSDI:precio ?precio ;
-        ?id ECSDI:fechaSalida ?fSalida ;
-        ?id ECSDI:fechaLlegada ?fLlegada ;
-        ?id ECSDI:localizacionSalida ?lSalida ;
-        ?id ECSDO:localizacionLlegada ?lLlegada .
-        FILTER ( ?fSalida = $fs && ?fLlegada = fl && ?lSalida = $ls && lLlegada = $ll)
-    }
-    ''')
+    WHERE {{
+        ?billete rdf:type ECSDI:BilleteIdaYVuelta ;
+                    ECSDI:identificador ?id ;
+                    ECSDI:precio ?precio ;
+                    ECSDI:fechaSalida ?fSalida ;
+                    ECSDI:fechaLlegada ?fLlegada ;
+                    ECSDI:ciudadSalida ?cSalida ;
+                    ECSDI:ciudadLlegada ?cLlegada .
+        FILTER (?fSalida = {'<'+fechaSalida+'>'} && ?fLlegada = {'<'+fechaLlegada+'>'} && ?cSalida = {'<'+ciudadSalida+'>'} && ?cLlegada = {'<'+ciudadLlegada+'>'})
+    }}
+    """
 
-    flights_from_london = queryTemplate.substitute(fs=fechaSalida, fl = fechaLlegada, ls=ciudadSalida, ll=ciudadLlegada)
-    print(flights_from_london)
+    print(query)
 
-    for s,p in transporteDB.query(flights_from_london, initNs={'ECSDI': ECSDI}):
+    search_count = 0
+    for s,p,o in transporteDB.query(query, initNs={'ECSDI': ECSDI, 'rdf': RDF}):
         search_count += 1
-        print(s,p)
+        print(s,p,o)
     # Testing city search
     # for a,b,c in hospedajeDB.triples((None, ECSDI.viaje_ciudad, city)):
     #     print(a,"Is an hotel in",c)
-    print("FLIGHTS FROM " +  + ": " + str(search_count))
+    print("FLIGHTS FROM " + cityDeparture + ": " + str(search_count))
 
 except ResponseError as error:
     print(error)
