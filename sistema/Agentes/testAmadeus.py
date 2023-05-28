@@ -127,14 +127,7 @@ try:
     query = f"""
     SELECT ?id ?precio
     WHERE {{
-        ?billete rdf:type ECSDI:BilleteIdaVuelta ;
-                    ECSDI:identificador ?id ;
-                    ECSDI:precio ?precio ;
-                    ECSDI:fechaSalida ?fSalida ;
-                    ECSDI:fechaLlegada ?fLlegada ;
-                    ECSDI:ciudadSalida ?cSalida ;
-                    ECSDI:ciudadLlegada ?cLlegada .
-        FILTER (?fSalida = <{fechaSalida}> && ?fLlegada = <{fechaLlegada}> && ?cSalida = <{ciudadSalida}> && ?cLlegada = <{ciudadLlegada}>)
+        ?billete rdf:type ECSDI:BilleteIdaVuelta)
     }}
     """
 
