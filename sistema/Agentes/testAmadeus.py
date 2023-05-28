@@ -134,7 +134,7 @@ try:
                     ECSDI:fechaLlegada ?fLlegada ;
                     ECSDI:ciudadSalida ?cSalida ;
                     ECSDI:ciudadLlegada ?cLlegada .
-        FILTER (?fSalida = {fechaSalida} && ?fLlegada = {fechaLlegada} && ?cSalida = {ciudadSalida} && ?cLlegada = {ciudadLlegada})
+        FILTER (?fSalida = <{fechaSalida}> && ?fLlegada = <{fechaLlegada}> && ?cSalida = <{ciudadSalida}> && ?cLlegada = <{ciudadLlegada}>)
     }}
     """
 
