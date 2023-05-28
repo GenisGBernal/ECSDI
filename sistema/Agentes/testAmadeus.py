@@ -6,10 +6,15 @@ from rdflib.namespace import FOAF, RDF
 from amadeus import Client, ResponseError
 from pprint import PrettyPrinter
 
+from string import Template
+
 from AgentUtil.OntoNamespaces import ECSDI
 
 hospedajeDB = Graph()
 hospedajeDB.bind('ECSDI', ECSDI)
+
+transporteDB = Graph()
+transporteDB.bind('ECSDI', ECSDI)
 
 AMADEUS_KEY = 'EiHVAHxxhgGwlEPZTZ4flG42U1x5QvMI'
 AMADEUS_SECRET = 'n32zEDo4N2CAAtLB'
@@ -45,13 +50,13 @@ try:
     search_count = 0
 
     hotels_in_london = f"""
-    SELECT ?identificador ?precio 
+    SELECT ?identificador ?precio
     WHERE {{
         ?hospedaje rdf:type ECSDI:Hospedaje;
                     ECSDI:identificador ?identificador;
                     ECSDI:precio ?precio;
                     ECSDI:viaje_ciudad {'<'+city+'>'}.
-    }}   
+    }}
     """
     print(hotels_in_london)
 
@@ -67,7 +72,89 @@ except ResponseError as error:
     print(error)
 
 
+# Flights query
+try:
+    cityDeparture = 'LON'
+    cityArrival = 'BCN'
+    departureDate='2023-09-01'
+    returnDate='2023-09-15'
+    transport = 'avion'
+    currency='EUR'
 
+    response = amadeus.shopping.flight_offers_search.get(
+        originLocationCode=cityDeparture,
+        destinationLocationCode=cityArrival,
+        departureDate=departureDate,
+        returnDate=returnDate,
+        adults=1,
+        currencyCode=currency)
+
+    transporte = ECSDI[transport]
+    ciudadSalida = ECSDI[cityDeparture]
+    ciudadLlegada = ECSDI[cityArrival]
+    fechaSalida = ECSDI[departureDate]
+    fechaLlegada = ECSDI[returnDate]
+
+    # respuestas = transporteDB.get((None, RDF.type, ECSDI.Ciudad))
+
+    # for a,b,c in respuestas:
+    #     if a == "malaga":
+    #         transporteDB.get((a, ECSDI.fecha))
+
+    transporteDB.add(ciudadSalida, RDF.type, ECSDI.Ciudad)
+    transporteDB.add(ciudadSalida, ECSDI.fecha_salida, literal)
+
+    transporteDB.add((ciudadSalida, RDF.type, ECSDI.Ciudad))
+    transporteDB.add((ciudadLlegada, RDF.type, ECSDI.Ciudad))
+    transporteDB.add((transporte, RDF.type, ECSDI.Transporte))
+
+    print("TOTAL NUMBER OF FLIGHTS: " + str(len(response.data)))
+    for f in response.data:
+        # El ID no es unico
+        flight_id = '{cityDepart}_{cityArrival}_{dateDepart}_{dateArrival}_{airlineCode}'.format(
+            cityDepart=cityCode, cityArrival='BCN', dateDepart=departureDate,
+            dateArrival=returnDate, airlineCode = f['itineraries'][0]['segments'][0]['carrierCode'])
+        flight_price= f['price']['total']
+
+        transporteDB.add((ECSDI[flight_id], RDF.type, ECSDI.BilleteIdaVuelta))
+        transporteDB.add((ECSDI[flight_id], ECSDI.identificador, Literal(flight_id, datatype=XSD.string)))
+        transporteDB.add((ECSDI[flight_id], ECSDI.precio, Literal(flight_price, datatype=XSD.float)))
+        transporteDB.add((ECSDI[flight_id], ECSDI.viaje_transporte, transporte))
+        transporteDB.add((ECSDI[flight_id], ECSDI.localizacionSalida, ciudadSalida))
+        transporteDB.add((ECSDI[flight_id], ECSDI.localizacionLlegada, ciudadLlegada))
+        transporteDB.add((ECSDI[flight_id], ECSDI.fechaSalida, ciudadLlegada))
+        transporteDB.add((ECSDI[flight_id], ECSDI.fechaLlegada, ciudadLlegada))
+
+    print(transporteDB.serialize(format='turtle'))
+
+    search_count = 0
+
+    queryTemplate = Template('''\
+    SELECT ?id ?precio
+    WHERE {
+        ?transporte rdf:type ECSDI:BilleteIdaYVuelta ;
+        ?id ECSDI:precio ?precio ;
+        ?id ECSDI:fechaSalida ?fSalida ;
+        ?id ECSDI:fechaLlegada ?fLlegada ;
+        ?id ECSDI:localizacionSalida ?lSalida ;
+        ?id ECSDO:localizacionLlegada ?lLlegada .
+        FILTER ( ?fSalida = $fs && ?fLlegada = fl && ?lSalida = $ls && lLlegada = $ll)
+    }
+    ''')
+
+    flights_from_london = queryTemplate.substitute(fs=fechaSalida, fl = fechaLlegada, ls=ciudadSalida, ll=ciudadLlegada)
+    print(flights_from_london)
+
+    for s,p in transporteDB.query(flights_from_london, initNs={'ECSDI': ECSDI}):
+        search_count += 1
+        print(s,p)
+    # Testing city search
+    # for a,b,c in hospedajeDB.triples((None, ECSDI.viaje_ciudad, city)):
+    #     print(a,"Is an hotel in",c)
+    print("FLIGHTS FROM " +  + ": " + str(search_count))
+
+except ResponseError as error:
+    print(error)
 
 
 
@@ -79,4 +166,3 @@ except ResponseError as error:
 #     gmess.add((hospedaje_mess_uri, RDF.type, ECSDI.QuieroHospedaje))
 #     gmess.add((hospedaje_mess_uri, ECSDI.viaje_ciudad, ECSDI['LON']))
 #     send_message(build_message(gmess, ACL['request'], sender=AgentePlanificador.uri, msgcnt=getMessageCount()) , )
-

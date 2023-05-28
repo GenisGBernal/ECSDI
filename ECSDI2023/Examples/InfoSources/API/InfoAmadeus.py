@@ -22,15 +22,17 @@ acceso a Amadeis (AMADEUS_KEY, AMADEUS_SECRET)
 :Authors:
     bejar
 
-:Version: 
+:Version:
 
 :Date:  02/02/2021
 """
 from amadeus import Client, ResponseError
-from AgentUtil.APIKeys import AMADEUS_KEY, AMADEUS_SECRET
 from pprint import PrettyPrinter
 
 __author__ = 'bejar'
+
+AMADEUS_KEY = 'EiHVAHxxhgGwlEPZTZ4flG42U1x5QvMI'
+AMADEUS_SECRET = 'n32zEDo4N2CAAtLB'
 
 amadeus = Client(
     client_id=AMADEUS_KEY,
@@ -43,42 +45,44 @@ try:
     response = amadeus.shopping.flight_offers_search.get(
         originLocationCode='BCN',
         destinationLocationCode='PAR',
-        departureDate='2021-06-01',
-        adults=1)
+        departureDate='2023-06-01',
+        adults=1,
+        max=1)
     print("FLIGHTS")
     print("-----------------------------------")
-    ppr.pprint(response.data)
+    ppr.pprint(response[])
 except ResponseError as error:
+    print(error.code)
     print(error)
 
-# Hotels query
-try:
-    response = amadeus.shopping.hotel_offers.get(cityCode='LON')
-    print("-----------------------------------")
-    print("HOTELS")
-    print("-----------------------------------")
-    for h in response.data:
-        ppr.pprint(h['hotel']['name'])
-    print('---')
-    # Siguientes paginas de resultados
-    response = amadeus.next(response)
-    for h in response.data:
-        ppr.pprint(h['hotel']['name'])
-    print('---')
-    response = amadeus.next(response)
-    for h in response.data:
-        ppr.pprint(h['hotel']['name'])
+# # Hotels query
+# try:
+#     response = amadeus.shopping.hotel_offers.get(cityCode='LON')
+#     print("-----------------------------------")
+#     print("HOTELS")
+#     print("-----------------------------------")
+#     for h in response.data:
+#         ppr.pprint(h['hotel']['name'])
+#     print('---')
+#     # Siguientes paginas de resultados
+#     response = amadeus.next(response)
+#     for h in response.data:
+#         ppr.pprint(h['hotel']['name'])
+#     print('---')
+#     response = amadeus.next(response)
+#     for h in response.data:
+#         ppr.pprint(h['hotel']['name'])
 
-except ResponseError as error:
-    print(error)
+# except ResponseError as error:
+#     print(error)
 
 
-# Activities query
-try:
-    response = amadeus.shopping.activities.by_square.get(north=41.397158, west=2.160873,
-                                          south=41.394582, east=2.177181)
-    print("ACTIVITIES")
-    print("-----------------------------------")
-    ppr.pprint(response.data)
-except ResponseError as error:
-    print(error)
+# # Activities query
+# try:
+#     response = amadeus.shopping.activities.by_square.get(north=41.397158, west=2.160873,
+#                                           south=41.394582, east=2.177181)
+#     print("ACTIVITIES")
+#     print("-----------------------------------")
+#     ppr.pprint(response.data)
+# except ResponseError as error:
+#     print(error)
