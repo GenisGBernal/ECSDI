@@ -1,13 +1,11 @@
 import amadeus
 import uuid
 
-from rdflib import XSD, Graph, Namespace, Literal
-from rdflib.namespace import FOAF, RDF
+from rdflib import XSD, Graph, Literal
+from rdflib.namespace import RDF
 
 from amadeus import Client, ResponseError
 from pprint import PrettyPrinter
-
-from string import Template
 
 from AgentUtil.OntoNamespaces import ECSDI
 
@@ -30,47 +28,47 @@ ppr = PrettyPrinter(indent=4)
 
 
 
-# # Hotels query
-# try:
-#     cityCode = 'LON'
-#     response = amadeus.reference_data.locations.hotels.by_city.get(cityCode=cityCode)
-#     # amadeus.shopping.hotel_offers_search.get(cityCode='LON')
-#     city = ECSDI[cityCode]
-#     hospedajeDB.add((city, RDF.type, ECSDI.Ciudad))
-#     print("TOTAL NUMBER OF HOTELS: " + str(len(response.data)))
-#     for h in response.data:
-#         hotel_name = h['name']
-#         hotel_id = h['hotelId']
-#         hospedajeDB.add((ECSDI[hotel_id], RDF.type, ECSDI.Hospedaje))
-#         hospedajeDB.add((ECSDI[hotel_id], ECSDI.identificador, Literal(hotel_name, datatype=XSD.string)))
-#         hospedajeDB.add((ECSDI[hotel_id], ECSDI.precio, Literal(100, datatype=XSD.float)))
-#         hospedajeDB.add((ECSDI[hotel_id], ECSDI.viaje_ciudad, city))
+# Hotels query
+try:
+    cityCode = 'LON'
+    response = amadeus.reference_data.locations.hotels.by_city.get(cityCode=cityCode)
+    # amadeus.shopping.hotel_offers_search.get(cityCode='LON')
+    city = ECSDI[cityCode]
+    hospedajeDB.add((city, RDF.type, ECSDI.Ciudad))
+    print("TOTAL NUMBER OF HOTELS: " + str(len(response.data)))
+    for h in response.data:
+        hotel_name = h['name']
+        hotel_id = h['hotelId']
+        hospedajeDB.add((ECSDI[hotel_id], RDF.type, ECSDI.Hospedaje))
+        hospedajeDB.add((ECSDI[hotel_id], ECSDI.identificador, Literal(hotel_name, datatype=XSD.string)))
+        hospedajeDB.add((ECSDI[hotel_id], ECSDI.precio, Literal(100, datatype=XSD.float)))
+        hospedajeDB.add((ECSDI[hotel_id], ECSDI.viaje_ciudad, city))
 
-#     #print(hospedajeDB.serialize(format='turtle'))
+    print(hospedajeDB.serialize(format='turtle'))
 
-#     search_count = 0
+    search_count = 0
 
-#     hotels_in_london = f"""
-#     SELECT ?identificador ?precio
-#     WHERE {{
-#         ?hospedaje rdf:type ECSDI:Hospedaje;
-#                     ECSDI:identificador ?identificador;
-#                     ECSDI:precio ?precio;
-#                     ECSDI:viaje_ciudad {'<'+city+'>'}.
-#     }}
-#     """
-#     print(hotels_in_london)
+    hotels_in_london = f"""
+    SELECT ?identificador ?precio
+    WHERE {{
+        ?hospedaje rdf:type ECSDI:Hospedaje;
+                    ECSDI:identificador ?identificador;
+                    ECSDI:precio ?precio;
+                    ECSDI:viaje_ciudad {'<'+city+'>'}.
+    }}
+    """
+    print(hotels_in_london)
 
-#     for s,p in hospedajeDB.query(hotels_in_london, initNs={'ECSDI': ECSDI}):
-#         search_count += 1
-#         print(s,p)
-#     # Testing city search
-#     # for a,b,c in hospedajeDB.triples((None, ECSDI.viaje_ciudad, city)):
-#     #     print(a,"Is an hotel in",c)
-#     print("HOTELS IN " + cityCode + ": " + str(search_count))
+    # for s,p in hospedajeDB.query(hotels_in_london, initNs={'ECSDI': ECSDI}):
+    #     search_count += 1
+    #     print(s,p)
+    # Testing city search
+    # for a,b,c in hospedajeDB.triples((None, ECSDI.viaje_ciudad, city)):
+    #     print(a,"Is an hotel in",c)
+    # print("HOTELS IN " + cityCode + ": " + str(search_count))
 
-# except ResponseError as error:
-#     print(error)
+except ResponseError as error:
+    print(error)
 
 
 # Flights query
@@ -106,46 +104,48 @@ try:
     transporteDB.add((transporte, RDF.type, ECSDI.Transporte))
 
     for f in response.data:
-        flight_id = uuid.uuid4()
+        flight_id = str(uuid.uuid4())
         flight_price= float(f['price']['grandTotal'])
 
         identificador = ECSDI[flight_id]
 
-        transporteDB.add((ECSDI[flight_id], ECSDI.identifcador, Literal(flight_id, datatype=XSD.uuid)))
-        transporteDB.add((ECSDI[flight_id], RDF.type, ECSDI.BilleteIdaVuelta))
-        transporteDB.add((ECSDI[flight_id], ECSDI.precio, Literal(flight_price, datatype=XSD.float)))
-        transporteDB.add((ECSDI[flight_id], ECSDI.viaje_transporte, transporte))
-        transporteDB.add((ECSDI[flight_id], ECSDI.ciudadSalida, ciudadSalida))
-        transporteDB.add((ECSDI[flight_id], ECSDI.ciudadLlegada, ciudadLlegada))
-        transporteDB.add((ECSDI[flight_id], ECSDI.fechaSalida, fechaSalida))
-        transporteDB.add((ECSDI[flight_id], ECSDI.fechaLlegada, fechaLlegada))
+        transporteDB.add((ECSDI[identificador], ECSDI.identifcador, Literal(flight_id, datatype=XSD.string)))
+        transporteDB.add((ECSDI[identificador], RDF.type, ECSDI.BilleteIdaVuelta))
+        transporteDB.add((ECSDI[identificador], ECSDI.precio, Literal(flight_price, datatype=XSD.float)))
+        transporteDB.add((ECSDI[identificador], ECSDI.viaje_transporte, transporte))
+        transporteDB.add((ECSDI[identificador], ECSDI.ciudadSalida, ciudadSalida))
+        transporteDB.add((ECSDI[identificador], ECSDI.ciudadLlegada, ciudadLlegada))
+        transporteDB.add((ECSDI[identificador], ECSDI.fechaSalida, fechaSalida))
+        transporteDB.add((ECSDI[identificador], ECSDI.fechaLlegada, fechaLlegada))
 
     print(transporteDB.serialize(format='turtle'))
 
     search_count = 0
 
-    query = f"""
-    SELECT ?id ?precio
+    flights_from_london = f"""
+    SELECT ?billete ?identificador ?precio
     WHERE {{
-        ?billete rdf:type ECSDI:BilleteIdaVuelta ;
-                    ECSDI:identificador ?id ;
-                    ECSDI:precio ?precio ;
-                    ECSDI:fechaSalida ?fSalida ;
-                    ECSDI:fechaLlegada ?fLlegada ;
-                    ECSDI:ciudadSalida ?cSalida ;
-                    ECSDI:ciudadLlegada ?cLlegada .
-        FILTER (?fSalida = <{fechaSalida}> && ?fLlegada = <{fechaLlegada}> && ?cSalida = <{ciudadSalida}> && ?cLlegada = {ciudadLlegada}>)
+        ?billete rdf:type ECSDI:BilleteIdaVuelta;
+                ECSDI:identifcador ?identificador;
+                ECSDI:precio ?precio;
     }}
     """
+    print(flights_from_london)
 
-    print(query)
+    # Execute the query
+    results = transporteDB.query(flights_from_london, initNs={"ECSDI": ECSDI, "rdf": RDF})
 
-    search_count = 0
-    for i,p in transporteDB.query(query, initNs={'ECSDI': ECSDI, 'rdf': RDF}):
-        search_count += 1
-        print(i,p)
+    # Process the results
+    for row in results:
+        billete = row["billete"]
+        identificador = row["identificador"]
+        precio = row["precio"]
 
-    print("TOTAL FLIGHTS: " + str(search_count))
+        # Do something with the billete, identificador, and precio values
+        print("Billete:", billete)
+        print("Identificador:", identificador)
+        print("Precio:", precio)
+        print("---")
 
 except ResponseError as error:
     print(error)
