@@ -14,6 +14,7 @@ from multiprocessing import Process, Queue
 import logging
 import argparse
 import random
+import uuid
 
 from flask import Flask, request
 from rdflib import XSD, Graph, Namespace, Literal
@@ -63,7 +64,7 @@ args = parser.parse_args()
 
 # Configuration stuff
 if args.port is None:
-    port = 9005
+    port = 9006
 else:
     port = args.port
 
@@ -103,8 +104,8 @@ def getMessageCount():
     return mss_cnt
 
 # Datos del Agente
-AgenteProveedorActividades = Agent('AgenteProveedorActivdades',
-                                    agn.AgenteProveedorActivdades,
+AgenteProveedorTransporte = Agent('AgenteProveedorTransporte',
+                                    agn.AgenteProveedorTransporte,
                                     'http://%s:%d/comm' % (hostaddr, port),
                                     'http://%s:%d/Stop' % (hostaddr, port))
 
@@ -115,7 +116,7 @@ AgenteDirectorio = Agent('AgenteDirectorio',
                        'http://%s:%d/Stop' % (dhostname, dport))
 
 # Global actividadesDB triplestore
-actividadesDB = Graph()
+transporteDB = Graph()
 
 # Cola de comunicacion entre procesos
 cola1 = Queue()
@@ -133,182 +134,133 @@ def register_message():
 
     logger.info('Nos registramos')
 
-    gr = registerAgent(AgenteProveedorActividades, AgenteDirectorio, DSO.AgenteProveedorActividades, getMessageCount())
+    gr = registerAgent(AgenteProveedorTransporte, AgenteDirectorio, DSO.AgenteProveedorTransporte, getMessageCount())
     return gr
 
-def obtener_diferencia_en_dias(fecha1, fecha2):
-    formato = "%Y-%m-%d"
-
-    fecha1_obj = datetime.strptime(fecha1, formato).date()
-    fecha2_obj = datetime.strptime(fecha2, formato).date()
-
-    return abs((fecha2_obj - fecha1_obj).days) + 1
-
-
-def repartir_actividades(grado_ludica, grado_cultural, grado_festivo, n_actividades):
-    total_grado = grado_ludica + grado_cultural + grado_festivo
-
-    n_actividades_ludicas = (grado_ludica / total_grado) * n_actividades
-    n_actividades_culturales = (grado_cultural / total_grado) * n_actividades
-    n_actividades_festivas = (grado_festivo / total_grado) * n_actividades
-
-    suma_partes = int(n_actividades_ludicas) + int(n_actividades_culturales) + int(n_actividades_festivas)
-    diferencia = n_actividades - suma_partes
-
-    if diferencia > 0:
-        if n_actividades_ludicas > 0:
-            n_actividades_ludicas += diferencia
-        elif n_actividades_culturales > 0:
-            n_actividades_culturales += diferencia
-        else:
-            n_actividades_festivas += diferencia
-
-    return int(n_actividades_ludicas), int(n_actividades_culturales), int(n_actividades_festivas)
-
-
-def obtener_actividad(tipo_actividad):
-
-    global actividadesDB
-
-    sujetos_actividades = list(actividadesDB.query("""
-        SELECT DISTINCT ?sujeto
-        WHERE {
-            ?sujeto ECSDI:tipo_actividad ?tipo .
-            FILTER (?tipo = ?var)
-        }
-    """, 
-    initNs = {'ECSDI': ECSDI},
-    initBindings={'var': tipo_actividad}
-    ))
-
-    sujeto = None
-
-    if len(sujetos_actividades) > 0:
-        logger.info('Busqueda en cache de actividad tipo: ' + tipo_actividad)
-        sujeto = random.choice(sujetos_actividades)[0]
-
-    else:
-        logger.info('Busqueda en amadeus de actividad tipo: ' + tipo_actividad)
-        if tipo_actividad == ECSDI.tipo_festiva:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=7, categories="NIGHTLIFE", page=70)
-            sujeto = ECSDI['actividad/festiva/'+random.choice(response.data)['id']]
-            for r in response.data:
-                actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], RDF.type, ECSDI.actividad))
-                actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.tipo_actividad, ECSDI.tipo_festiva))
-                actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.subtipo_actividad, Literal(r['subType'], datatype=XSD.string)))
-                actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.nombre_actividad, Literal(r['name'], datatype=XSD.string)))
-                for tag in r['tags']:
-                    actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
-
-        elif tipo_actividad == ECSDI.tipo_ludica:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=7, categories="SHOPPING", page=70)
-            sujeto = ECSDI['actividad/ludica/'+random.choice(response.data)['id']]
-            for r in response.data:
-                actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], RDF.type, ECSDI.actividad))
-                actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.tipo_actividad, ECSDI.tipo_ludica))
-                actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.subtipo_actividad, Literal(r['subType'], datatype=XSD.string)))
-                actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.nombre_actividad, Literal(r['name'], datatype=XSD.string)))
-                for tag in r['tags']:
-                    actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
-
-        elif tipo_actividad == ECSDI.tipo_cultural:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=7, categories="SIGHTS", page=70)
-            sujeto = ECSDI['actividad/cultural/'+random.choice(response.data)['id']]
-            for r in response.data:
-                actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], RDF.type, ECSDI.actividad))
-                actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.tipo_actividad, ECSDI.tipo_cultural))
-                actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.subtipo_actividad, Literal(r['subType'], datatype=XSD.string)))
-                actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.nombre_actividad, Literal(r['name'], datatype=XSD.string)))
-                for tag in r['tags']:
-                    actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
-        
-    gr = Graph()
-    IAA = Namespace('IAActions')
-    gr.bind('foaf', FOAF)
-    gr.bind('iaa', IAA)
-    gr.add((sujeto, RDF.type, ECSDI.actividad))    
-    gr.add((sujeto, ECSDI.tipo_actividad, actividadesDB.value(subject=sujeto, predicate=ECSDI.tipo_actividad)))
-    gr.add((sujeto, ECSDI.subtipo_actividad, actividadesDB.value(subject=sujeto, predicate=ECSDI.subtipo_actividad)))
-    gr.add((sujeto, ECSDI.nombre_actividad, actividadesDB.value(subject=sujeto, predicate=ECSDI.nombre_actividad)))
-    for _, _, tag in actividadesDB.triples((sujeto, ECSDI.tag_actividad, None)):
-        gr.add((sujeto, ECSDI.tag_actividad, tag))
-
-    return gr
-
-
-def obtener_actividades_un_dia(dia, tipo_actividad_manana, tipo_actividad_tarde, tipo_actividad_noche):
-
-    gr = Graph()
-    IAA = Namespace('IAActions')
-    gr.bind('foaf', FOAF)
-    gr.bind('iaa', IAA)
-    sujeto = ECSDI['ActividadesParaUnDia-' + str(getMessageCount())]
-    gr.add((sujeto, RDF.type, ECSDI.actividades_ordenadas))
-    gr.add((sujeto, ECSDI.dia, Literal(dia, datatype=XSD.integer)))
-
-    gr_actividad_de_manana = obtener_actividad(tipo_actividad=tipo_actividad_manana)
-    sujeto_actividad_de_manana = gr_actividad_de_manana.value(predicate=RDF.type, object=ECSDI.actividad)
-    gr.add((sujeto, ECSDI.actividad_manana, sujeto_actividad_de_manana))
-
-    gr_actividad_de_tarde = obtener_actividad(tipo_actividad=tipo_actividad_tarde)
-    sujeto_actividad_de_tarde = gr_actividad_de_tarde.value(predicate=RDF.type, object=ECSDI.actividad)
-    gr.add((sujeto, ECSDI.actividad_tarde, sujeto_actividad_de_tarde))
-
-    gr_actividad_de_noche = obtener_actividad(tipo_actividad=tipo_actividad_noche)
-    sujeto_actividad_de_noche = gr_actividad_de_noche.value(predicate=RDF.type, object=ECSDI.actividad)
-    gr.add((sujeto, ECSDI.actividad_noche, sujeto_actividad_de_noche))
-
-    return gr + gr_actividad_de_manana + gr_actividad_de_tarde + gr_actividad_de_noche
-
-
-def obtener_intervalo_actividades(sujeto, gm):
-
-    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida).toPython()
-    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno).toPython()
-    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica).toPython()
-    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural).toPython()
-    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva).toPython()
+def obtener_transporte(sujeto, gm):
+    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
+    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
+    lugar_partida = gm.value(subject=sujeto, predicate=ECSDI.LugarDePartida)
 
     logger.info("Fecha llegada: " + fecha_llegada)
     logger.info("Fecha salida: " + fecha_salida)
-    logger.info("Grado festivo: " + str(grado_festivo))
-    logger.info("Grado cultural: " + str(grado_cultural))
-    logger.info("Grado ludica: " + str(grado_ludica))
+    logger.info("Lugar de partida: " + str(lugar_partida))
 
-    duracion_vacaciones = obtener_diferencia_en_dias(fecha_llegada, fecha_salida)
+    logger.info("Fecha llegada: " + fecha_llegada.toPython())
+    logger.info("Fecha salida: " + fecha_salida.toPython())
+    logger.info("Lugar de partida: " + str(lugar_partida).toPython())
 
-    n_actividades = duracion_vacaciones * 3;
+    remote_transporte_search(fecha_llegada, fecha_salida, lugar_partida)
 
-    n_actividades_ludicas, n_actividades_culturales, n_actividades_festivas = repartir_actividades(grado_ludica, grado_cultural, grado_festivo, n_actividades)
+    gr = fetch_queried_data(fecha_llegada, fecha_salida, lugar_partida)
 
-    logger.info("Duración vacaciones: " + str(duracion_vacaciones))
-    logger.info("N festivo: " + str(n_actividades_festivas))
-    logger.info("N cultural: " + str(n_actividades_culturales))
-    logger.info("N ludicas: " + str(n_actividades_ludicas))
-
-    tipo_actividades = []
-    tipo_actividades.extend([ECSDI.tipo_ludica] * n_actividades_ludicas)
-    tipo_actividades.extend([ECSDI.tipo_cultural] * n_actividades_culturales)
-    tipo_actividades.extend([ECSDI.tipo_festiva] * n_actividades_festivas)
-    random.shuffle(tipo_actividades)
-
-    gr = Graph()
     IAA = Namespace('IAActions')
     gr.bind('foaf', FOAF)
     gr.bind('iaa', IAA)
-    sujeto = ECSDI['IntervaloDeActividades-' + str(getMessageCount())]
-    gr.add((sujeto, RDF.type, ECSDI.viaje_actividades))
+    sujeto = ECSDI['Transporte-' + str(getMessageCount())]
+    gr.add((sujeto, RDF.type, ECSDI.viaje_transporte))
 
-    for i in range(duracion_vacaciones):
-        gr += obtener_actividades_un_dia(
-            dia = i+1,
-            tipo_actividad_manana= tipo_actividades[i*3],
-            tipo_actividad_tarde= tipo_actividades[i*3+1], 
-            tipo_actividad_noche= tipo_actividades[i*3+2])
-        
     print(gr.serialize(format='turtle'))
 
     return build_message(gr, ACL['inform'], sender=AgenteProveedorActividades.uri, msgcnt=getMessageCount(), content=sujeto)
+
+def fetch_queried_data(fechaLlegada, fechaSalida, lugarDePartida, lugarDeLlegada):
+    global transporteDB
+
+    search_count = 0
+
+    flights_matching = f"""
+    SELECT ?billete ?identificador ?precio
+    WHERE {{
+        ?billete rdf:type ECSDI:BilleteIdaVuelta;
+                ECSDI:identifcador ?identificador;
+                ECSDI:precio ?precio;
+                ECSDI.LugarDePartida ?lugarDePartida_param))
+                ECSDI.LugarDeLlegada ?lugarDeLlegada_param))
+                ECSDI.DiaDePartida, ?fechaSalida_param))
+                ECSDI.DiaDeRetorno, ?fechaLlegada_param))
+    }}
+    """
+    logger.info(flights_matching)
+
+    # Execute the query
+    results = transporteDB.query(
+        flights_matching,
+        initNs={'ECSDI': ECSDI, 'rdf': RDF},
+        initBindings={'lugarDePartida_param': lugarDePartida,
+                        'lugarDeLlegada_param': lugarDeLlegada,
+                        'fechaSalida_param': fechaSalida,
+                        'fechaLlegada_param': fechaLlegada})
+
+    gr = Graph()
+    # Process the results
+    for row in results:
+        search_count += 1
+        billete = row['billete']
+        identificador = row['identificador']
+        precio = row['precio']
+
+        # Do something with the billete, identificador, and precio values
+        logger.info('Billete:', billete)
+        logger.info('Identificador:', identificador)
+        logger.info('Precio:', precio)
+        logger.info('---')
+
+    return results
+
+def remote_transporte_search(fechaLlegada, fechaSalida, lugarDePartida, lugarDeLlegada):
+    global transporteDB
+
+    # cityDeparture = 'LON'
+    # cityArrival = 'BCN'
+    # departureDate='2023-09-01'
+    # returnDate='2023-09-15'
+    cityDeparture = lugarDePartida.toPython()
+    cityArrival = lugarDeLlegada.toPython()
+    departureDate= fechaSalida.toPython()
+    returnDate= fechaLlegada.toPython()
+    transport = 'avion'
+    currency='EUR'
+
+    response = amadeus.shopping.flight_offers_search.get(
+        originLocationCode=cityDeparture,
+        destinationLocationCode=cityArrival,
+        departureDate=departureDate,
+        returnDate=returnDate,
+        adults=1,
+        currencyCode=currency,
+        max=20)
+
+    logger.info("TOTAL NUMBER OF FLIGHTS: " + str(len(response.data)))
+
+    transporte = ECSDI[transport]
+    # ciudadSalida = ECSDI[cityDeparture]
+    # ciudadLlegada = ECSDI[cityArrival]
+    # fechaSalida = ECSDI[departureDate]
+    # fechaLlegada = ECSDI[returnDate]
+
+    transporteDB.add((fechaSalida, RDF.type, ECSDI.Fecha))
+    transporteDB.add((fechaLlegada, RDF.type, ECSDI.Fecha))
+    transporteDB.add((lugarDePartida, RDF.type, ECSDI.Ciudad))
+    transporteDB.add((lugarDeLlegada, RDF.type, ECSDI.Ciudad))
+    transporteDB.add((transporte, RDF.type, ECSDI.Transporte))
+
+    for f in response.data:
+        flight_id = str(uuid.uuid4())
+        flight_price= float(f['price']['grandTotal'])
+
+        identificador = ECSDI[flight_id]
+
+        transporteDB.add((ECSDI[identificador], ECSDI.identifcador, Literal(flight_id, datatype=XSD.string)))
+        transporteDB.add((ECSDI[identificador], RDF.type, ECSDI.BilleteIdaVuelta))
+        transporteDB.add((ECSDI[identificador], ECSDI.precio, Literal(flight_price, datatype=XSD.float)))
+        transporteDB.add((ECSDI[identificador], ECSDI.viaje_transporte, transporte))
+        transporteDB.add((ECSDI[identificador], ECSDI.LugarDePartida, lugarDePartida))
+        transporteDB.add((ECSDI[identificador], ECSDI.LugarDeLlegada, lugarDeLlegada))
+        transporteDB.add((ECSDI[identificador], ECSDI.DiaDePartida, fechaSalida))
+        transporteDB.add((ECSDI[identificador], ECSDI.DiaDeRetorno, fechaLlegada))
+
+    logger.info(transporteDB.serialize(format='turtle'))
 
 
 @app.route("/iface", methods=['GET', 'POST'])
@@ -361,14 +313,14 @@ def comunicacion():
     # Comprobamos que sea un mensaje FIPA ACL
     if msgdic is None:
         # Si no es, respondemos que no hemos entendido el mensaje
-        gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorActividades.uri, msgcnt=getMessageCount())
+        gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri, msgcnt=getMessageCount())
     else:
         # Obtenemos la performativa
         perf = msgdic['performative']
 
         if perf != ACL.request:
             # Si no es un request, respondemos que no hemos entendido el mensaje
-            gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorActividades.uri, msgcnt=getMessageCount())
+            gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri, msgcnt=getMessageCount())
         else:
             # Extraemos el objeto del contenido que ha de ser una accion de la ontologia de acciones del agente
             # de registro
@@ -378,10 +330,16 @@ def comunicacion():
                 sujeto = msgdic['content']
                 accion = gm.value(subject=sujeto, predicate=RDF.type)
 
-                if accion == ECSDI.IntervaloDeActividades:
-                    logger.info('Peticion de intervalo de actividades')
-                    gr = obtener_intervalo_actividades(sujeto, gm)
+                if accion == ECSDI.QuieroTransporte:
+                    logger.info('Peticion de Transporte')
+                    gr = obtener_transporte(sujeto, gm)
+                else:
+                    # Si no es ninguna de las acciones conocontentcidas, respondemos que no hemos entendido el mensaje
+                    gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri, msgcnt=getMessageCount())
 
+            else:
+                print('No content')
+                gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri, msgcnt=getMessageCount())
     logger.info('Respondemos a la peticion')
 
     return gr.serialize(format='xml')
