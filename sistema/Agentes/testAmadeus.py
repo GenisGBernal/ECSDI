@@ -133,19 +133,19 @@ try:
     print(flights_from_london)
 
     # Execute the query
-    results = transporteDB.query(flights_from_london, initNs={"ECSDI": ECSDI, "rdf": RDF})
+    results = transporteDB.query(flights_from_london, initNs={'ECSDI': ECSDI, 'rdf': RDF})
 
     # Process the results
     for row in results:
-        billete = row["billete"]
-        identificador = row["identificador"]
-        precio = row["precio"]
+        billete = row['billete']
+        identificador = row['identificador']
+        precio = row['precio']
 
         # Do something with the billete, identificador, and precio values
-        print("Billete:", billete)
-        print("Identificador:", identificador)
-        print("Precio:", precio)
-        print("---")
+        print('Billete:', billete)
+        print('Identificador:', identificador)
+        print('Precio:', precio)
+        print('---')
 
 except ResponseError as error:
     print(error)
