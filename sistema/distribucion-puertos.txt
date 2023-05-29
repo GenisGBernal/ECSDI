@@ -3,3 +3,4 @@ AgenteProveedorActividades = 9001
 AgentePlanificador = 9002
 AgenteContratador = 9003
 AgenteProveedorActividades = 9005
+AgenteProveedorTransporte = 9006
