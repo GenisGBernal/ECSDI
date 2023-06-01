@@ -117,6 +117,14 @@ def get_message_properties(msg):
     return msgdic
 
 
+def clean_graph(msg):
+
+    flipa_subject = msg.value(predicate=RDF.type, object=ACL.FipaAclMessage)
+    if flipa_subject is not None:
+        msg.remove((flipa_subject, None, None))
+    return msg
+
+
 def getAgentInfo(agentType, directoryAgent, sender, messageCount):
 
     logger.info("Petición de búsqueda al agente directorio de: " + agentType)

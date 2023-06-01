@@ -9,17 +9,17 @@ Agente que se registra como agente de hoteles y espera peticiones
 @author: javier
 """
 
-from multiprocessing import Process, Queue
+from multiprocessing import Pipe, Process, Queue
 import logging
 import argparse
 
 from flask import Flask, request
-from rdflib import Graph, Namespace, Literal
+from rdflib import XSD, Graph, Namespace, Literal
 from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, getAgentInfo, send_message, get_message_properties
+from AgentUtil.ACLMessages import build_message, send_message, get_message_properties, getAgentInfo, clean_graph
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.DSO import DSO
@@ -105,10 +105,6 @@ AgenteDirectorio = Agent('AgenteDirectorio',
 # Global dsgraph triplestore
 dsgraph = Graph()
 
-# Cola de comunicacion entre procesos
-cola1 = Queue()
-
-
 def register_message():
     """
     Envia un mensaje de registro al servicio de registro
@@ -151,30 +147,61 @@ def obtener_hospedaje(primerDia, últimoDia):
 def obtener_transporte(lugarDePartida, primerDia, últimoDia):
     pass
 
-def obtener_actividades(primerDia, últimoDia):
-    pass
+def obtener_actividades(p_salida, fecha_llegada, fecha_salida, grado_ludica, grado_cultural, grado_festivo):
+
+    global g_actividades
+    
+    agenteProveedorActividades = getAgentInfo(DSO.AgenteProveedorActividades, AgenteDirectorio, AgentePlanificador, getMessageCount())
+    
+    gmess = Graph()
+    IAA = Namespace('IAActions')
+    gmess.bind('foaf', FOAF)
+    gmess.bind('iaa', IAA)
+    sujeto = agn['PeticiónIntervaloDeActividades-' + str(getMessageCount())]
+    gmess.add((sujeto, RDF.type, ECSDI.IntervaloDeActividades))
+    gmess.add((sujeto, ECSDI.DiaDePartida, Literal(fecha_llegada, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(fecha_salida, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.grado_ludica, Literal(grado_ludica, datatype=XSD.integer)))
+    gmess.add((sujeto, ECSDI.grado_cultural, Literal(grado_cultural, datatype=XSD.integer)))
+    gmess.add((sujeto, ECSDI.grado_festiva, Literal(grado_festivo, datatype=XSD.integer)))
+
+    msg = build_message(gmess, perf=ACL.request,
+                        sender=AgentePlanificador.uri,
+                        receiver=agenteProveedorActividades.uri,
+                        msgcnt=getMessageCount(),
+                        content=sujeto)
+
+    gr = send_message(msg, agenteProveedorActividades.address)
+    g_actividades = clean_graph(gr)
+
+    p_salida.send(gr.serialize(format='xml'))
+    p_salida.close()
+    
 
 def planificar_viaje(sujeto, gm):
 
-    global mss_cnt
-    diaPartida = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
-    diaRetorno = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
+    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida).toPython()
+    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno).toPython()
+    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica).toPython()
+    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural).toPython()
+    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva).toPython()
 
-    print(diaPartida)
-    print(diaRetorno)
+    logger.info("Fecha llegada: " + fecha_llegada)
+    logger.info("Fecha salida: " + fecha_salida)
+    logger.info("Grado festivo: " + str(grado_festivo))
+    logger.info("Grado cultural: " + str(grado_cultural))
+    logger.info("Grado ludica: " + str(grado_ludica))
 
     # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
     agenteProveedorHospedaje = getAgentInfo(DSO.AgenteProveedorHospedaje, AgenteDirectorio, AgentePlanificador, getMessageCount())
-    mss_cnt += 1
 
-    # p1 = Process(target=obtener_actividades, args=(diaPartida,diaRetorno))
-    # p1.start()
+    p_actividades_salida, p_actividades_entrada = Pipe()
+    p1 = Process(target=obtener_actividades, args=(p_actividades_entrada, fecha_llegada,fecha_salida,grado_ludica,grado_cultural,grado_festivo))
+    p1.start()
 
     # p2 =
     # p2.start()
 
-    # p3 = 
-    # p3.start()
     gmess = Graph()
     gmess.bind('ECSDI', ECSDI)
     hospedaje_mess_uri = ECSDI['QuieroHospedaje' + str(getMessageCount())]
@@ -182,7 +209,7 @@ def planificar_viaje(sujeto, gm):
     gmess.add((hospedaje_mess_uri, ECSDI.viaje_ciudad, ECSDI['LON']))
 
     response_hosp = send_message(build_message(gmess, ACL['request'], sender=AgentePlanificador.uri, content= hospedaje_mess_uri, msgcnt=getMessageCount()) , agenteProveedorHospedaje.address)
-    mss_cnt += 1
+    
 
     msgdic_hospedaje = get_message_properties(response_hosp)
 
@@ -196,16 +223,32 @@ def planificar_viaje(sujeto, gm):
 
     
 
-    
+    # p3 = 
+    # p3.start()
 
+    g_actividades = Graph()
+    g_actividades.parse(data=p_actividades_salida.recv(), format='xml')
 
-    # p1.join()
+    p1.join()
     # p2.join()
     # p3.join()
 
-    # TODO: Construir respuesta p1+p2+p3
 
-    return build_message(Graph(), ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount())
+
+
+
+
+
+    gmess = Graph()
+    IAA = Namespace('IAActions')
+    gmess.bind('foaf', FOAF)
+    gmess.bind('iaa', IAA)
+    sujeto = agn['planificador/PlanificacionDeViaje-' + str(getMessageCount())]
+    gmess.add((sujeto, RDF.type, ECSDI.tiene_viaje))
+
+    gmess += g_actividades
+
+    return build_message(gmess, ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount(), content=sujeto)
 
 
 @app.route("/comm")
@@ -268,11 +311,8 @@ def tidyup():
     Acciones previas a parar el agente
 
     """
-    global cola1
-    cola1.put(0)
 
-
-def agentbehavior1(cola):
+def agentbehavior1():
     """
     Un comportamiento del agente
 
@@ -281,22 +321,10 @@ def agentbehavior1(cola):
     # Registramos el agente
     gr = register_message()
 
-    # Escuchando la cola hasta que llegue un 0
-    fin = False
-    while not fin:
-        while cola.empty():
-            pass
-        v = cola.get()
-        if v == 0:
-            fin = True
-        else:
-            print(v)
-
-
 
 if __name__ == '__main__':
     # Ponemos en marcha los behaviors
-    ab1 = Process(target=agentbehavior1, args=(cola1,))
+    ab1 = Process(target=agentbehavior1, args=())
     ab1.start()
 
     # Ponemos en marcha el servidor
