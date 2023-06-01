@@ -138,21 +138,25 @@ def register_message():
     return gr
 
 def obtener_transporte(sujeto, gm):
-    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
-    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
-    lugar_partida = gm.value(subject=sujeto, predicate=ECSDI.LugarDePartida)
+    logger.info("Entramos en OBTENER_TRANSPORTE---------------------------")
+    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida).toPython()
+    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno).toPython()
+    lugar_partida = gm.value(subject=sujeto, predicate=ECSDI.LugarDePartida).toPython()
+    lugar_llegada = gm.value(subject=sujeto, predicate=ECSDI.LugarDeLlegada).toPython()
 
     logger.info("Fecha llegada: " + fecha_llegada)
     logger.info("Fecha salida: " + fecha_salida)
     logger.info("Lugar de partida: " + str(lugar_partida))
+    logger.info("Lugar de llegada: " + str(lugar_llegada))
 
-    logger.info("Fecha llegada: " + fecha_llegada.toPython())
-    logger.info("Fecha salida: " + fecha_salida.toPython())
-    logger.info("Lugar de partida: " + str(lugar_partida).toPython())
+    # logger.info("Fecha llegada: " + fecha_llegada.toPython())
+    # logger.info("Fecha salida: " + fecha_salida.toPython())
+    # logger.info("Lugar de partida: " + str(lugar_partida).toPython())
+    # logger.info("Lugar de llegada: " + str(lugar_llegada).toPyhton())
 
-    remote_transporte_search(fecha_llegada, fecha_salida, lugar_partida)
+    remote_transporte_search(fecha_llegada, fecha_salida, lugar_partida, lugar_llegada)
 
-    gr = fetch_queried_data(fecha_llegada, fecha_salida, lugar_partida)
+    gr = fetch_queried_data(fecha_llegada, fecha_salida, lugar_partida, lugar_llegada)
 
     IAA = Namespace('IAActions')
     gr.bind('foaf', FOAF)
@@ -162,9 +166,10 @@ def obtener_transporte(sujeto, gm):
 
     print(gr.serialize(format='turtle'))
 
-    return build_message(gr, ACL['inform'], sender=AgenteProveedorActividades.uri, msgcnt=getMessageCount(), content=sujeto)
+    return build_message(gr, ACL['inform'], sender=AgenteProveedorTransporte.uri, msgcnt=getMessageCount(), content=sujeto)
 
 def fetch_queried_data(fechaLlegada, fechaSalida, lugarDePartida, lugarDeLlegada):
+    logger.info("Entramos en FETCH_QUEIRED_DATA---------------------------")
     global transporteDB
 
     search_count = 0
@@ -184,17 +189,17 @@ def fetch_queried_data(fechaLlegada, fechaSalida, lugarDePartida, lugarDeLlegada
     logger.info(flights_matching)
 
     # Execute the query
-    results = transporteDB.query(
+    resultsQuery = transporteDB.query(
         flights_matching,
         initNs={'ECSDI': ECSDI, 'rdf': RDF},
-        initBindings={'lugarDePartida_param': lugarDePartida,
-                        'lugarDeLlegada_param': lugarDeLlegada,
-                        'fechaSalida_param': fechaSalida,
-                        'fechaLlegada_param': fechaLlegada})
+        initBindings={'lugarDePartida_param': Literal(lugarDePartida, datatype=XSD.string),
+                        'lugarDeLlegada_param': Literal(lugarDeLlegada, datatype=XSD.string),
+                        'fechaSalida_param': Literal(fechaSalida, datatype=XSD.string),
+                        'fechaLlegada_param': Literal(fechaLlegada, datatype=XSD.string)})
 
     gr = Graph()
     # Process the results
-    for row in results:
+    for row in resultsQuery:
         search_count += 1
         billete = row['billete']
         identificador = row['identificador']
@@ -205,31 +210,42 @@ def fetch_queried_data(fechaLlegada, fechaSalida, lugarDePartida, lugarDeLlegada
         logger.info('Identificador:', identificador)
         logger.info('Precio:', precio)
         logger.info('---')
+        gr.add((ECSDI[identificador], ECSDI.identifcador, Literal(identificador, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], RDF.type, ECSDI.BilleteIdaVuelta))
+        gr.add((ECSDI[identificador], ECSDI.precio, Literal(precio, datatype=XSD.float)))
+        gr.add((ECSDI[identificador], ECSDI.viaje_transporte, ECSDI['avion']))
+        gr.add((ECSDI[identificador], ECSDI.LugarDePartida, Literal(lugarDePartida, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugarDePartida, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.DiaDePartida, Literal(fechaSalida, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(fechaLlegada, datatype=XSD.string)))
 
-    return results
+
+    return gr
 
 def remote_transporte_search(fechaLlegada, fechaSalida, lugarDePartida, lugarDeLlegada):
+    logger.info("Entramos en REMOTE_TRANSPORT_SEARACH----------------------")
     global transporteDB
 
     # cityDeparture = 'LON'
     # cityArrival = 'BCN'
     # departureDate='2023-09-01'
     # returnDate='2023-09-15'
-    cityDeparture = lugarDePartida.toPython()
-    cityArrival = lugarDeLlegada.toPython()
-    departureDate= fechaSalida.toPython()
-    returnDate= fechaLlegada.toPython()
+    logger.info('Fecha salida: ' + fechaSalida)
+    logger.info('Fecha llegada: ' + fechaLlegada)
+    logger.info('Lugar salida: ' + lugarDePartida)
+    logger.info('Lugar llegada: ' + lugarDePartida)
     transport = 'avion'
-    currency='EUR'
+
+
 
     response = amadeus.shopping.flight_offers_search.get(
-        originLocationCode=cityDeparture,
-        destinationLocationCode=cityArrival,
-        departureDate=departureDate,
-        returnDate=returnDate,
+        originLocationCode=lugarDePartida,
+        destinationLocationCode=lugarDeLlegada,
+        departureDate=fechaSalida,
+        returnDate=fechaLlegada,
         adults=1,
-        currencyCode=currency,
-        max=20)
+        currencyCode='EUR',
+        max=10)
 
     logger.info("TOTAL NUMBER OF FLIGHTS: " + str(len(response.data)))
 
@@ -239,11 +255,11 @@ def remote_transporte_search(fechaLlegada, fechaSalida, lugarDePartida, lugarDeL
     # fechaSalida = ECSDI[departureDate]
     # fechaLlegada = ECSDI[returnDate]
 
-    transporteDB.add((fechaSalida, RDF.type, ECSDI.Fecha))
-    transporteDB.add((fechaLlegada, RDF.type, ECSDI.Fecha))
-    transporteDB.add((lugarDePartida, RDF.type, ECSDI.Ciudad))
-    transporteDB.add((lugarDeLlegada, RDF.type, ECSDI.Ciudad))
-    transporteDB.add((transporte, RDF.type, ECSDI.Transporte))
+    # transporteDB.add((fechaSalida, RDF.type, ECSDI.Fecha))
+    # transporteDB.add((fechaLlegada, RDF.type, ECSDI.Fecha))
+    # transporteDB.add((lugarDePartida, RDF.type, ECSDI.Ciudad))
+    # transporteDB.add((lugarDeLlegada, RDF.type, ECSDI.Ciudad))
+    # transporteDB.add((transporte, RDF.type, ECSDI.Transporte))
 
     for f in response.data:
         flight_id = str(uuid.uuid4())
@@ -378,8 +394,8 @@ def agentbehavior1(cola):
 
 if __name__ == '__main__':
     # Ponemos en marcha los behaviors
-    # ab1 = Process(target=agentbehavior1, args=(cola1,))
-    # ab1.start()
+    ab1 = Process(target=agentbehavior1, args=(cola1,))
+    ab1.start()
 
     ab1 = Process(target=agentbehavior1, args=(cola1,))
     ab1.start()

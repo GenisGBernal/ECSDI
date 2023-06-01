@@ -50,7 +50,7 @@ args = parser.parse_args()
 
 # Configuration stuff
 if args.port is None:
-    # TODO: PONER PUERTO QUE SEA UNICO 
+    # TODO: PONER PUERTO QUE SEA UNICO
     port = 9002
 else:
     port = args.port
@@ -144,15 +144,44 @@ def stop():
 def obtener_hospedaje(primerDia, últimoDia):
     pass
 
-def obtener_transporte(lugarDePartida, primerDia, últimoDia):
-    pass
+def obtener_transporte(p_salida, lugarDePartida, fechaSalida, fechaLlegada):
+    logger.info("Entro en OBTENER_TRANSPORTE")
+
+    global g_transportes
+
+    agenteProveedorTransporte = getAgentInfo(DSO.AgenteProveedorTransporte, AgenteDirectorio, AgentePlanificador, getMessageCount())
+
+    gmess = Graph()
+    IAA = Namespace('IAActions')
+    gmess.bind('foaf', FOAF)
+    gmess.bind('iaa', IAA)
+    sujeto = agn['PeticiónTransporte-' + str(getMessageCount())]
+    gmess.add((sujeto, RDF.type, ECSDI.QuieroTransporte))
+    gmess.add((sujeto, ECSDI.DiaDePartida, Literal(fechaSalida, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(fechaLlegada, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.LugarDePartida, Literal(lugarDePartida, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.LugarDeLlegada, Literal('BCN', datatype=XSD.string)))
+
+    logger.info(gmess.serialize(format='turtle'))
+
+    msg = build_message(gmess, perf=ACL.request,
+                        sender=AgentePlanificador.uri,
+                        receiver=agenteProveedorTransporte.uri,
+                        msgcnt=getMessageCount(),
+                        content=sujeto)
+
+    gr = send_message(msg, agenteProveedorTransporte.address)
+    g_transportes = clean_graph(gr)
+
+    p_salida.send(gr.serialize(format='xml'))
+    p_salida.close()
 
 def obtener_actividades(p_salida, fecha_llegada, fecha_salida, grado_ludica, grado_cultural, grado_festivo):
 
     global g_actividades
-    
+
     agenteProveedorActividades = getAgentInfo(DSO.AgenteProveedorActividades, AgenteDirectorio, AgentePlanificador, getMessageCount())
-    
+
     gmess = Graph()
     IAA = Namespace('IAActions')
     gmess.bind('foaf', FOAF)
@@ -176,16 +205,20 @@ def obtener_actividades(p_salida, fecha_llegada, fecha_salida, grado_ludica, gra
 
     p_salida.send(gr.serialize(format='xml'))
     p_salida.close()
-    
+
 
 def planificar_viaje(sujeto, gm):
 
-    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida).toPython()
-    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno).toPython()
-    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica).toPython()
-    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural).toPython()
-    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva).toPython()
+    logger.info(gm.serialize(format='turtle'))
 
+    lugar_salida = gm.value(subject=sujeto, predicate=ECSDI.LugarDePartida)
+    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
+    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
+    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica)
+    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural)
+    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva)
+
+    logger.info("Lugar salida: " + lugar_salida)
     logger.info("Fecha llegada: " + fecha_llegada)
     logger.info("Fecha salida: " + fecha_salida)
     logger.info("Grado festivo: " + str(grado_festivo))
@@ -198,17 +231,21 @@ def planificar_viaje(sujeto, gm):
     p1 = Process(target=obtener_actividades, args=(p_actividades_entrada, fecha_llegada,fecha_salida,grado_ludica,grado_cultural,grado_festivo))
     p1.start()
 
-    # p2 =
-    # p2.start()
+    p_transportes_salida, p_transportes_entrada = Pipe()
+    p2 = Process(target=obtener_transporte, args=(p_transportes_entrada, fecha_salida, fecha_llegada, lugar_salida))
+    p2.start()
 
-    # p3 = 
+    # p3 =
     # p3.start()
 
     g_actividades = Graph()
     g_actividades.parse(data=p_actividades_salida.recv(), format='xml')
 
+    g_transportes = Graph()
+    g_transportes.parse(data=p_transportes_salida.recv(), format='xml')
+
     p1.join()
-    # p2.join()
+    p2.join()
     # p3.join()
 
     gmess = Graph()
@@ -219,6 +256,7 @@ def planificar_viaje(sujeto, gm):
     gmess.add((sujeto, RDF.type, ECSDI.tiene_viaje))
 
     gmess += g_actividades
+    gmess += g_transportes
 
     return build_message(gmess, ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount(), content=sujeto)
 

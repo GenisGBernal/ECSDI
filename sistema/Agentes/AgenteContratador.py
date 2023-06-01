@@ -114,7 +114,7 @@ def obtener_info_actividad(sujeto, g, franja):
     if tipo_actividad == ECSDI.tipo_ludica:
         tipo_actividad = 'Lúdica'
     elif tipo_actividad == ECSDI.tipo_cultural:
-        tipo_actividad = 'Cultural'    
+        tipo_actividad = 'Cultural'
     else:
         tipo_actividad = 'Festiva'
 
@@ -179,7 +179,7 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, g
                         receiver=agentePlanificador.uri,
                         msgcnt=getMessageCount(),
                         content=sujeto)
-    
+
     log.info("Petición de viaje al AgentePlanificador")
     gr = send_message(msg, agentePlanificador.address)
     log.info("Respuesta recibida")
@@ -206,22 +206,22 @@ def browser_iface():
 
         if diaRetorno < diaPartida:
             return render_template('iface.html', error_message='La fecha de retorno no puede ser anterior a la de salida')
-        
+
         if grado_ludica + grado_cultural + grado_festivo == 0:
             return render_template('iface.html', error_message='Se debe escoger un mínimo de algo en algun tipo de actividad')
 
         gr = generar_peticion_de_viaje(
-            usuario=usuario, 
-            lugarDePartida=lugarDePartida, 
-            diaPartida=diaPartida, 
-            diaRetorno=diaRetorno, 
-            grado_ludica=grado_ludica, 
-            grado_cultural=grado_cultural, 
+            usuario=usuario,
+            lugarDePartida=lugarDePartida,
+            diaPartida=diaPartida,
+            diaRetorno=diaRetorno,
+            grado_ludica=grado_ludica,
+            grado_cultural=grado_cultural,
             grado_festivo=grado_festivo)
-        
+
         print(gr.serialize(format='turtle'))
-        
-        
+
+
         actividades = obtener_actividades(gr)
 
         return render_template('iface.html', actividades=actividades)
