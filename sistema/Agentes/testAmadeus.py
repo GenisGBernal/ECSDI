@@ -63,6 +63,8 @@ try:
     #     print(a,"Is an hotel in",c)
     print("HOTELS IN " + cityCode + ": " + str(search_count))
 
+    print(ECSDI.htels['LON'])
+
 except ResponseError as error:
     print(error)
 
