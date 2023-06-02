@@ -155,6 +155,7 @@ def obtener_hospedaje(p_salida, primerDia, últimoDia, cityCode):
 
     response = clean_graph(response_hosp)
     p_salida.send(response.serialize(format='xml'))
+    p_salida.close()
 
     return
 
@@ -232,20 +233,9 @@ def planificar_viaje(sujeto, gm):
     p2 = Process(target=obtener_hospedaje, args=(p_hospedaje_entrada, fecha_llegada, fecha_salida, cityCode))
     p2.start()
 
-
     
-
-    
-
-    
-
     # p3 = 
     # p3.start()
-
-
-    p1.join()
-    p2.join()
-    # p3.join()
 
     g_actividades = Graph()
     g_actividades.parse(data=p_actividades_salida.recv(), format='xml')
@@ -253,12 +243,9 @@ def planificar_viaje(sujeto, gm):
     g_hospedaje = Graph()
     g_hospedaje.parse(data=p_hospedaje_salida.recv(), format='xml')
 
-    
-
-
-
-
-
+    p1.join()
+    p2.join()
+    # p3.join()
 
 
     gmess = Graph()
