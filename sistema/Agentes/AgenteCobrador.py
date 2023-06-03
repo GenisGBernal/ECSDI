@@ -49,6 +49,9 @@ parser.add_argument('--port', type=int, help="Puerto de comunicacion del agente"
 parser.add_argument('--dhost', help="Host del agente de directorio")
 parser.add_argument('--dport', type=int, help="Puerto de comunicacion del agente de directorio")
 
+parser.add_argument('--bhost', help="Host del Banco")
+parser.add_argument('--bport', type=int, help="Puerto de comunicacion del Banco")
+
 # Logging
 logger = config_logger(level=1)
 
@@ -79,6 +82,17 @@ if args.dhost is None:
 else:
     dhostname = args.dhost
 
+
+if args.bport is None:
+    bport = 9008
+else:
+    bport = args.bport
+
+if args.bhost is None:
+    bhostname = socket.gethostname()
+else:
+    bhostname = args.bhost
+
 # Flask stuff
 app = Flask(__name__)
 if not args.verbose:
@@ -108,8 +122,13 @@ AgenteDirectorio = Agent('AgenteDirectorio',
                        'http://%s:%d/Register' % (dhostname, dport),
                        'http://%s:%d/Stop' % (dhostname, dport))
 
-# Global hospedajeDB triplestore
-hospedajeDB = Graph()
+
+# Datos API Banco
+AgenteBanco = Agent('AgenteBanco',
+                                    agn.AgenteBanco,
+                                    'http://%s:%d/comm' % (bhostname, bport),
+                                    'http://%s:%d/Stop' % (bhostname, bport))
+
 
 # Cola de comunicacion entre procesos
 cola1 = Queue()
@@ -185,6 +204,7 @@ def se_rechaza(viaje_sujeto, viaje_content, price):
 
 def process_payment(gm, content):
     print("Processing payment")
+    tarjeta = gm.value(subject=content, predicate=ECSDI.numero_tarjeta)
     price_to_pay = gm.value(subject=content, predicate=ECSDI.precio_total)
     print("Price to pay: ", price_to_pay)
 
@@ -206,16 +226,35 @@ def process_payment(gm, content):
 
     # Logica de se accepta o rechaza
 
+    gmess = Graph()
+    IAA = Namespace('IAActions')
+    gmess.bind('foaf', FOAF)
+    gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
 
 
+    # price_to_pay = gm.value(subject=content, predicate=ECSDI.precio_total)
+    # tarjeta = gm.value(subject=content, predicate=ECSDI.numero_tarjeta)
 
+    subject_tx = ECSDI['Tx-' + str(getMessageCount())]
+    gmess.add((subject_tx, RDF.type, ECSDI.Transaccion))
+    gmess.add((subject_tx, ECSDI.numero_tarjeta, Literal(tarjeta, datatype=XSD.string)))
+    gmess.add((subject_tx, ECSDI.precio_total, Literal(price_to_pay, datatype=XSD.float)))
 
+    to_send = build_message(gmess, perf=ACL.request, sender=AgenteCobrador.uri, receiver=AgenteBanco.uri,
+                            msgcnt=getMessageCount(), content=subject_tx)
+    
+    print("Sending message to bank:")
+    print(gmess.serialize(format='turtle'))
+    
+    # Enviar mensaje al banco
+    resp = send_message(to_send, AgenteBanco.address)
+    acceptado = resp.value(predicate=RDF.type, object=ECSDI.Confirmacion)
 
-    # ###############################
-
-    return se_rechaza(le_viaje, juice_trip, price_to_pay)
-
-    return se_accepta(le_viaje, juice_trip, price_to_pay)
+    if acceptado is None:
+        return se_rechaza(le_viaje, juice_trip, price_to_pay)
+    else:
+        return se_accepta(le_viaje, juice_trip, price_to_pay)
 
 
 

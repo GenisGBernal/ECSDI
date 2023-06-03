@@ -197,7 +197,7 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, g
     log.info("Respuesta recibida")
     return gr
 
-def peticion_de_cobro():
+def peticion_de_cobro(tarjeta_id):
     agenteCobrador = getAgentInfo(DSO.AgenteCobrador, DirectoryAgent, AgenteContratador, getMessageCount())
 
     sujeto = agn['QuieroCobrarViaje-' + str(getMessageCount())]
@@ -220,15 +220,14 @@ def peticion_de_cobro():
     gmess.bind('ECSDI', ECSDI)
     gmess.add((sujeto, RDF.type, ECSDI.QuieroCobrarViaje))
 
-    le_viaje = None
-
-    for a, _, _ in gmess.triples((None, RDF.type , ECSDI.PeticionDeViaje)):
-        le_viaje = a
+    le_viaje = gmess.value(predicate=RDF.type, object=ECSDI.PeticionDeViaje)
 
     if le_viaje is None:
         return False
 
     gmess.add((sujeto, ECSDI.tiene_viaje, le_viaje))
+    gmess.add((sujeto, ECSDI.numero_tarjeta, Literal(tarjeta_id, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.precio_total, Literal(obten_precio_total(viaje_pendiente_confirmacion), datatype=XSD.float)))
 
     msg = build_message(gmess, perf=ACL.request,
                         sender=AgenteContratador.uri,
@@ -236,7 +235,7 @@ def peticion_de_cobro():
                         msgcnt=getMessageCount(),
                         content=sujeto)
     
-    log.info("Petición de cobro al AgenteCobrador")
+    logger.info("Petición de cobro al AgenteCobrador")
     gr = send_message(msg, agenteCobrador.address)
     
     print(gr.serialize(format='turtle'))
@@ -255,7 +254,8 @@ def recibir_respuesta_propuesta_viaje():
     if request.method == 'POST':
         respuesta = request.form['respuesta']
         if respuesta == "si":
-            success = peticion_de_cobro()
+            tarjeta_id = request.form['tarjeta']
+            success = peticion_de_cobro(tarjeta_id)
             
             if success: return render_template('viaje_confirmado.html')
             else: 
