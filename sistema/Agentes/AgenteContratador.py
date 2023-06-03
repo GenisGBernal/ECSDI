@@ -239,6 +239,11 @@ def recibir_respuesta_propuesta_viaje():
     if request.method == 'POST':
         respuesta = request.form['respuesta']
         if respuesta == "si":
+
+            # TODO: Llamada a cobro
+
+            # TODO: Llamada viajes confirmados
+
             return render_template('viaje_confirmado.html')
         else:
             return render_template('iface.html')
