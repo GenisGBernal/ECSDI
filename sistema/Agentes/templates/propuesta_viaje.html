@@ -5,6 +5,10 @@
 </head>
 <body>
 
+{% if error_message %}
+<p style="color: red;">{{ error_message }}</p>
+{% endif %}
+
 <h3>Propuesta de viaje:</h3>
 <ul>
     {% for dia in actividades %}

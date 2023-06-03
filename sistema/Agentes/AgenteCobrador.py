@@ -14,12 +14,12 @@ import logging
 import argparse
 
 from flask import Flask, request
-from rdflib import Graph, Namespace, Literal
+from rdflib import XSD, Graph, Namespace, Literal
 from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, send_message, get_message_properties
+from AgentUtil.ACLMessages import build_message, clean_graph, send_message, get_message_properties
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.DSO import DSO
@@ -29,8 +29,15 @@ import socket
 from AgentUtil.ACLMessages import registerAgent
 from AgentUtil.OntoNamespaces import ECSDI
 
+from amadeus import Client, ResponseError
 
-__author__ = 'javier'
+AMADEUS_KEY = 'EiHVAHxxhgGwlEPZTZ4flG42U1x5QvMI'
+AMADEUS_SECRET = 'n32zEDo4N2CAAtLB'
+
+amadeus = Client(
+    client_id=AMADEUS_KEY,
+    client_secret=AMADEUS_SECRET
+)
 
 # Definimos los parametros de la linea de comandos
 parser = argparse.ArgumentParser()
@@ -50,8 +57,7 @@ args = parser.parse_args()
 
 # Configuration stuff
 if args.port is None:
-    # TODO: PONER PUERTO QUE SEA UNICO 
-    port = 9001
+    port = 9007
 else:
     port = args.port
 
@@ -91,8 +97,8 @@ def getMessageCount():
     return mss_cnt
 
 # Datos del Agente
-AgentePlantilla = Agent('AgentePlantilla',
-                                    agn.AgentePlantilla,
+AgenteCobrador = Agent('AgenteCobrador',
+                                    agn.AgenteCobrador,
                                     'http://%s:%d/comm' % (hostaddr, port),
                                     'http://%s:%d/Stop' % (hostaddr, port))
 
@@ -102,8 +108,8 @@ AgenteDirectorio = Agent('AgenteDirectorio',
                        'http://%s:%d/Register' % (dhostname, dport),
                        'http://%s:%d/Stop' % (dhostname, dport))
 
-# Global dsgraph triplestore
-dsgraph = Graph()
+# Global hospedajeDB triplestore
+hospedajeDB = Graph()
 
 # Cola de comunicacion entre procesos
 cola1 = Queue()
@@ -121,16 +127,14 @@ def register_message():
 
     logger.info('Nos registramos')
 
-    gr = registerAgent(AgentePlantilla, AgenteDirectorio, DSO.AgentePlantilla, getMessageCount())
+    gr = registerAgent(AgenteCobrador, AgenteDirectorio, DSO.AgenteCobrador, getMessageCount())
     return gr
 
-def obtener_actividades():
-    grafo
 
 
 @app.route("/iface", methods=['GET', 'POST'])
 def browser_iface():
-    """
+    """content
     Permite la comunicacion con el agente via un navegador
     via un formulario
     """
@@ -148,6 +152,72 @@ def stop():
     shutdown_server()
     return "Parando Servidor"
 
+def se_accepta(viaje_sujeto, viaje_content, price):
+    gmess = Graph()
+    IAA = Namespace('IAActions')
+    gmess.bind('foaf', FOAF)
+    gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
+
+    gmess += viaje_content
+
+    sujeto = agn['TomaCobroAceptado-' + str(getMessageCount())]
+    gmess.add((sujeto, RDF.type, ECSDI.TomaCobroAcceptado))
+    gmess.add((sujeto, ECSDI.tiene_viaje, viaje_sujeto))
+    gmess.add((sujeto, ECSDI.precio_total, Literal(price, datatype=XSD.float)))
+    return gmess
+
+def se_rechaza(viaje_sujeto, viaje_content, price):
+    gmess = Graph()
+    IAA = Namespace('IAActions')
+    gmess.bind('foaf', FOAF)
+    gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
+
+    gmess += viaje_content
+
+    sujeto = agn['TomaCobroRechazado-' + str(getMessageCount())]
+    gmess.add((sujeto, RDF.type, ECSDI.TomaCobroRechazado))
+    gmess.add((sujeto, ECSDI.tiene_viaje, viaje_sujeto))
+    gmess.add((sujeto, ECSDI.precio_total, Literal(price, datatype=XSD.float)))
+    return gmess
+
+
+def process_payment(gm, content):
+    print("Processing payment")
+    price_to_pay = gm.value(subject=content, predicate=ECSDI.precio_total)
+    print("Price to pay: ", price_to_pay)
+
+    # Get the payment info
+
+
+    le_viaje = None
+    juice_trip = clean_graph(gm)
+    for a, _, _ in juice_trip.triples((None, RDF.type , ECSDI.PeticionDeViaje)):
+        le_viaje = a
+
+    if le_viaje is None: return build_message(Graph(), ACL['not-understood'], sender=AgenteCobrador.uri, msgcnt=getMessageCount())
+
+
+    message_subject = gm.value(predicate=RDF.type, object=ECSDI.QuieroCobrarViaje)
+    if message_subject is not None:
+        juice_trip.remove((message_subject, None, None))
+
+
+    # Logica de se accepta o rechaza
+
+
+
+
+
+
+    # ###############################
+
+    return se_rechaza(le_viaje, juice_trip, price_to_pay)
+
+    return se_accepta(le_viaje, juice_trip, price_to_pay)
+
+
 
 @app.route("/comm")
 def comunicacion():
@@ -161,10 +231,9 @@ def comunicacion():
     Las acciones se mandan siempre con un Request
     Prodriamos resolver las busquedas usando una performativa de Query-ref
     """
-    global dsgraph
     global mss_cnt
 
-    logger.info('Peticion de informacion recibida')
+    logger.info('Peticion de cobro recibida')
 
     # Extraemos el mensaje y creamos un grafo con el
     message = request.args['content']
@@ -172,18 +241,19 @@ def comunicacion():
     gm.parse(data=message, format='xml')
 
     msgdic = get_message_properties(gm)
+    print("I got this message:", gm.serialize(format='turtle'))
 
     # Comprobamos que sea un mensaje FIPA ACL
     if msgdic is None:
         # Si no es, respondemos que no hemos entendido el mensaje
-        gr = build_message(Graph(), ACL['not-understood'], sender=AgentePlantilla.uri, msgcnt=getMessageCount())
+        gr = build_message(Graph(), ACL['not-understood'], sender=AgenteCobrador.uri, msgcnt=getMessageCount())
     else:
         # Obtenemos la performativa
         perf = msgdic['performative']
 
         if perf != ACL.request:
             # Si no es un request, respondemos que no hemos entendido el mensaje
-            gr = build_message(Graph(), ACL['not-understood'], sender=AgentePlantilla.uri, msgcnt=getMessageCount())
+            gr = build_message(Graph(), ACL['not-understood'], sender=AgenteCobrador.uri, msgcnt=getMessageCount())
         else:
             # Extraemos el objeto del contenido que ha de ser una accion de la ontologia de acciones del agente
             # de registro
@@ -193,11 +263,21 @@ def comunicacion():
                 content = msgdic['content']
                 accion = gm.value(subject=content, predicate=RDF.type)
 
-                if accion == ECSDI.ObtenerActividades:
-                    logger.info('Peticion de actividades')
-                    actividades = obtener_actividades()
+                if accion == ECSDI.QuieroCobrarViaje:
+                    logger.info('Peticion de Cobro recibida')
 
+                    gr = process_payment(gm, content)
+                    
+                else:
+                    # Si no es ninguna de las acciones conocontentcidas, respondemos que no hemos entendido el mensaje
+                    gr = build_message(Graph(), ACL['not-understood'], sender=AgenteCobrador.uri, msgcnt=getMessageCount())
+
+            else:
+                print('No content')
+                gr = build_message(Graph(), ACL['not-understood'], sender=AgenteCobrador.uri, msgcnt=getMessageCount())
+    
     logger.info('Respondemos a la peticion')
+    print("RESPUESTA: ", gr.serialize(format='turtle'))
 
     return gr.serialize(format='xml')
 

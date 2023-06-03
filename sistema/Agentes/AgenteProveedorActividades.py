@@ -296,6 +296,7 @@ def obtener_intervalo_actividades(sujeto, gm):
     IAA = Namespace('IAActions')
     gr.bind('foaf', FOAF)
     gr.bind('iaa', IAA)
+    gr.bind('ECSDI', ECSDI)
     sujeto = ECSDI['IntervaloDeActividades-' + str(getMessageCount())]
     gr.add((sujeto, RDF.type, ECSDI.viaje_actividades))
 

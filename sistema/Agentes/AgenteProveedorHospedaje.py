@@ -130,9 +130,6 @@ def register_message():
     gr = registerAgent(AgenteProveedorHospedaje, AgenteDirectorio, DSO.AgenteProveedorHospedaje, getMessageCount())
     return gr
 
-def obtener_hospedaje():
-    grafo
-
 
 def remote_hospedaje_search(cityCode):
     global hospedajeDB
@@ -146,7 +143,7 @@ def remote_hospedaje_search(cityCode):
     print("TOTAL NUMBER OF HOTELS: " + str(len(response.data)))
     for h in response.data:
         hotel_name = h['name']
-        hotel_id = h['hotelId']
+        hotel_id = ECSDI['hotel/'+h['hotelId']]
         hospedajeDB.add((ECSDI[hotel_id], RDF.type, ECSDI.Hospedaje))
         hospedajeDB.add((ECSDI[hotel_id], ECSDI.identificador, Literal(hotel_name, datatype=XSD.string)))
         hospedajeDB.add((ECSDI[hotel_id], ECSDI.precio, Literal(100, datatype=XSD.float)))

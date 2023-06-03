@@ -1,0 +1,101 @@
+@prefix ECSDI: <http://watafak.amigo/ontologies/ecsdi/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ECSDI:ACLON555 a ECSDI:Hospedaje ;
+    ECSDI:identificador "ST GEORGIO"^^xsd:string ;
+    ECSDI:precio "100.0"^^xsd:float ;
+    ECSDI:viaje_ciudad ECSDI:LON .
+
+ECSDI:ACLONGAF a ECSDI:Hospedaje ;
+    ECSDI:identificador "LA GAFFE LONDON"^^xsd:string ;
+    ECSDI:precio "100.0"^^xsd:float ;
+    ECSDI:viaje_ciudad ECSDI:LON .
+
+ECSDI:ACLONWIL a ECSDI:Hospedaje ;
+    ECSDI:identificador "PRINCE WILLIAM"^^xsd:string ;
+    ECSDI:precio "100.0"^^xsd:float ;
+    ECSDI:viaje_ciudad ECSDI:LON .
+
+ECSDI:ALLON591 a ECSDI:Hospedaje ;
+    ECSDI:identificador "ALOFT LONDON EXCEL"^^xsd:string ;
+    ECSDI:precio "100.0"^^xsd:float ;
+    ECSDI:viaje_ciudad ECSDI:LON .
+
+ECSDI:APLONCHI a ECSDI:Hospedaje ;
+    ECSDI:identificador "CHILTERN FIREHOUSE"^^xsd:string ;
+    ECSDI:precio "100.0"^^xsd:float ;
+    ECSDI:viaje_ciudad ECSDI:LON .
+
+ECSDI:ActividadesParaUnDia-2 a ECSDI:actividades_ordenadas ;
+    ECSDI:actividad_manana <http://watafak.amigo/ontologies/ecsdi/actividad/festiva/00D6517781> ;
+    ECSDI:actividad_noche <http://watafak.amigo/ontologies/ecsdi/actividad/ludica/072DE3321C> ;
+    ECSDI:actividad_tarde <http://watafak.amigo/ontologies/ecsdi/actividad/ludica/FDBA840166> ;
+    ECSDI:dia 1 .
+
+ECSDI:ActividadesParaUnDia-3 a ECSDI:actividades_ordenadas ;
+    ECSDI:actividad_manana <http://watafak.amigo/ontologies/ecsdi/actividad/ludica/FDBA840166> ;
+    ECSDI:actividad_noche <http://watafak.amigo/ontologies/ecsdi/actividad/festiva/3AB95ACC51> ;
+    ECSDI:actividad_tarde <http://watafak.amigo/ontologies/ecsdi/actividad/cultural/422AE48C0D> ;
+    ECSDI:dia 2 .
+
+ECSDI:IntervaloDeActividades-1 a ECSDI:viaje_actividades .
+
+<http://www.agentes.org#planificador/PlanificacionDeViaje-1> a ECSDI:PeticionDeViaje ;
+    ECSDI:precio_total "6969"^^xsd:float .
+
+<http://watafak.amigo/ontologies/ecsdi/actividad/cultural/422AE48C0D> a ECSDI:actividad ;
+    ECSDI:nombre_actividad "Clinica Dental Implants i Dents"^^xsd:string ;
+    ECSDI:subtipo_actividad "POINT_OF_INTEREST"^^xsd:string ;
+    ECSDI:tag_actividad "commercialplace"^^xsd:string,
+        "health&medical"^^xsd:string,
+        "sightseeing"^^xsd:string ;
+    ECSDI:tipo_actividad ECSDI:tipo_cultural .
+
+<http://watafak.amigo/ontologies/ecsdi/actividad/festiva/00D6517781> a ECSDI:actividad ;
+    ECSDI:nombre_actividad "Sala Apolo"^^xsd:string ;
+    ECSDI:subtipo_actividad "POINT_OF_INTEREST"^^xsd:string ;
+    ECSDI:tag_actividad "activities"^^xsd:string,
+        "attraction"^^xsd:string,
+        "bar"^^xsd:string,
+        "cheap"^^xsd:string,
+        "club"^^xsd:string,
+        "commercialplace"^^xsd:string,
+        "dance"^^xsd:string,
+        "events"^^xsd:string,
+        "musicvenue"^^xsd:string,
+        "nightclub"^^xsd:string,
+        "professionalservices"^^xsd:string,
+        "sightseeing"^^xsd:string,
+        "tourguide"^^xsd:string ;
+    ECSDI:tipo_actividad ECSDI:tipo_festiva .
+
+<http://watafak.amigo/ontologies/ecsdi/actividad/festiva/3AB95ACC51> a ECSDI:actividad ;
+    ECSDI:nombre_actividad "Fira de Barcelona"^^xsd:string ;
+    ECSDI:subtipo_actividad "POINT_OF_INTEREST"^^xsd:string ;
+    ECSDI:tag_actividad "activities"^^xsd:string,
+        "commercialplace"^^xsd:string,
+        "events"^^xsd:string,
+        "musicvenue"^^xsd:string,
+        "sightseeing"^^xsd:string ;
+    ECSDI:tipo_actividad ECSDI:tipo_festiva .
+
+<http://watafak.amigo/ontologies/ecsdi/actividad/ludica/072DE3321C> a ECSDI:actividad ;
+    ECSDI:nombre_actividad "Decathlon"^^xsd:string ;
+    ECSDI:subtipo_actividad "POINT_OF_INTEREST"^^xsd:string ;
+    ECSDI:tag_actividad "commercialplace"^^xsd:string,
+        "shopping"^^xsd:string,
+        "sightseeing"^^xsd:string,
+        "sport"^^xsd:string,
+        "sports"^^xsd:string ;
+    ECSDI:tipo_actividad ECSDI:tipo_ludica .
+
+<http://watafak.amigo/ontologies/ecsdi/actividad/ludica/FDBA840166> a ECSDI:actividad ;
+    ECSDI:nombre_actividad "Poker Tattoo"^^xsd:string ;
+    ECSDI:subtipo_actividad "POINT_OF_INTEREST"^^xsd:string ;
+    ECSDI:tag_actividad "activities"^^xsd:string,
+        "commercialplace"^^xsd:string,
+        "gift"^^xsd:string,
+        "shopping"^^xsd:string,
+        "sightseeing"^^xsd:string,
+        "tattoo"^^xsd:string ;
+    ECSDI:tipo_actividad ECSDI:tipo_ludica .

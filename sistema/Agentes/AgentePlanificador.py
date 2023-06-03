@@ -153,7 +153,13 @@ def obtener_hospedaje(p_salida, primerDia, últimoDia, cityCode):
 
     response_hosp = send_message(build_message(gmess, ACL['request'], sender=AgentePlanificador.uri, content= hospedaje_mess_uri, msgcnt=getMessageCount()) , agenteProveedorHospedaje.address)
 
+    # Clean from fipa subjects and response subjects
     response = clean_graph(response_hosp)
+    response_subject = response.value(predicate=RDF.type, object=ECSDI.TomaHospedaje)
+    if response_subject is not None:
+        response.remove((response_subject, None, None))
+
+    # Send response to main thread
     p_salida.send(response.serialize(format='xml'))
     p_salida.close()
 
@@ -252,11 +258,14 @@ def planificar_viaje(sujeto, gm):
     IAA = Namespace('IAActions')
     gmess.bind('foaf', FOAF)
     gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
     sujeto = agn['planificador/PlanificacionDeViaje-' + str(getMessageCount())]
-    gmess.add((sujeto, RDF.type, ECSDI.tiene_viaje))
+    gmess.add((sujeto, RDF.type, ECSDI.PeticionDeViaje))
 
     gmess += g_actividades
     gmess += g_hospedaje
+
+    gmess.add((sujeto, ECSDI.precio_total, Literal(6969, datatype=XSD.float)))
 
     return build_message(gmess, ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount(), content=sujeto)
 
