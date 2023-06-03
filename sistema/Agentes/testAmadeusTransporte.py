@@ -129,8 +129,15 @@ try:
         ?billete ECSDI:viaje_transporte ?viaje_transporte_param ;
                  ECSDI:identificador ?identificador ;
                  ECSDI:precio ?precio ;
-                 ECSDI:DiaDePartida ?dia_partida_param .
-        FILTER (?viaje_transporte_param = <{transporte}> && ?dia_partida_param = "{dia_partida}")
+                 ECSDI:DiaDePartida ?dia_partida_param ;
+                 ECSDI:DiaDeRetorno ?dia_retorno_param ;
+                 ECSDI:LugarDePartida ?lugar_partida_param ;
+                 ECSDI:LugarDeLlegada ?lugar_llegada_param .
+        FILTER (?viaje_transporte_param = <{transporte}>
+                && ?dia_partida_param = "{dia_partida}"
+                && ?dia_retorno_param = "{dia_retorno}"
+                && ?lugar_partida_param = "{lugar_partida}"
+                && ?lugar_llegada_param = "{lugar_llegada}")
     }}
     """
     print(flights_matching)
