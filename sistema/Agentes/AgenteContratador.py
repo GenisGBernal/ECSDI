@@ -155,6 +155,14 @@ def obtener_actividades(grafo_viaje):
     return lista_actividades_completa
 
 
+def obten_precio_total(grafo_viaje):
+
+    sujeto = grafo_viaje.value(predicate=RDF.type, object=ECSDI.PeticionDeViaje)
+    precio_total = grafo_viaje.value(subject=sujeto, predicate=ECSDI.precio_total).toPython()
+
+    return precio_total
+
+
 def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, grado_ludica, grado_cultural, grado_festivo):
 
     agentePlanificador = getAgentInfo(DSO.AgentePlanificador, DirectoryAgent, AgenteContratador, getMessageCount())
@@ -253,7 +261,7 @@ def recibir_respuesta_propuesta_viaje():
             else: 
                 global viaje_pendiente_confirmacion
                 actividades = obtener_actividades(viaje_pendiente_confirmacion)
-                return render_template('propuesta_viaje.html', actividades=actividades, error_message='No se ha podido realizar el cobro')
+                return render_template('propuesta_viaje.html', actividades=actividades, precio_total = obten_precio_total(viaje_pendiente_confirmacion), error_message='No se ha podido realizar el cobro')
         else:
             return render_template('iface.html')
     
@@ -272,7 +280,7 @@ def emulate_planificador():
         
             actividades = obtener_actividades(gr)
 
-            return render_template('propuesta_viaje.html', actividades=actividades)
+            return render_template('propuesta_viaje.html', actividades=actividades, precio_total = obten_precio_total(gr))
 
 
 @app.route("/iface", methods=['GET', 'POST'])

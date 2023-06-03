@@ -27,6 +27,14 @@
 
 <h4>Aceptar viaje</t4>
 <form method="post" action="/respuesta-propuesta-viaje">
+    <!-- Cantidad de dinero a cargar (factura) -->
+    <strong>Costo total del viaje: {{precio_total}} </strong><br><br>
+    
+    <!-- Preguntamos por tarjeta de credito donde cargar el precio -->
+    <label for="tarjeta">Tarjeta de crédito:</label>
+    <input type="text" id="tarjeta" name="tarjeta"><br><br>
+
+    
     <button type="submit" name="respuesta" value="si"><p style="color: green;">Sí</p></button>
     <button type="submit" name="respuesta" value="no"><p style="color: red;">No</p></button>
 </form>
