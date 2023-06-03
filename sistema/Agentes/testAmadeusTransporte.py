@@ -1,5 +1,7 @@
 import amadeus
 import uuid
+import random
+
 
 from rdflib import XSD, Graph, Literal
 from rdflib.namespace import RDF
@@ -23,48 +25,6 @@ amadeus = Client(
     client_secret=AMADEUS_SECRET
 )
 ppr = PrettyPrinter(indent=4)
-
-# Hotels query
-try:
-    cityCode = 'LON'
-    response = amadeus.reference_data.locations.hotels.by_city.get(cityCode=cityCode)
-    # amadeus.shopping.hotel_offers_search.get(cityCode='LON')
-    city = ECSDI[cityCode]
-    hospedajeDB.add((city, RDF.type, ECSDI.Ciudad))
-    print("TOTAL NUMBER OF HOTELS: " + str(len(response.data)))
-    for h in response.data:
-        hotel_name = h['name']
-        hotel_id = h['hotelId']
-        hospedajeDB.add((ECSDI[hotel_id], RDF.type, ECSDI.Hospedaje))
-        hospedajeDB.add((ECSDI[hotel_id], ECSDI.identificador, Literal(hotel_name, datatype=XSD.string)))
-        hospedajeDB.add((ECSDI[hotel_id], ECSDI.precio, Literal(100, datatype=XSD.float)))
-        hospedajeDB.add((ECSDI[hotel_id], ECSDI.viaje_ciudad, city))
-
-    print(hospedajeDB.serialize(format='turtle'))
-
-    search_count = 0
-
-    hotels_in_london = f"""
-    SELECT ?identificador ?precio
-    WHERE {{
-        ?hospedaje rdf:type ECSDI:Hospedaje;
-                    ECSDI:identificador ?identificador;
-                    ECSDI:precio ?precio;
-                    ECSDI:viaje_ciudad {'<' + city + '>'}.
-    }}
-    """
-    print(hotels_in_london)
-
-    # for s,p in hospedajeDB.query(hotels_in_london, initNs={'ECSDI': ECSDI}):
-    #     search_count += 1
-    #     print(s,p)
-    # Testing city search
-    # for a,b,c in hospedajeDB.triples((None, ECSDI.viaje_ciudad, city)):
-    #     print(a,"Is an hotel in",c)
-    # print("HOTELS IN " + cityCode + ": " + str(search_count))
-
-except ResponseError as error:
-    print(error)
 
 # Flights query
 try:
@@ -112,6 +72,26 @@ try:
         transporteDB.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
 
     print(transporteDB.serialize(format='turtle'))
+
+    print("Entramos en OBTENER_TRANSPORTE_OPTIMO----------------------")
+
+    identificadores = list(transporteDB.triples((None, ECSDI.identificador, None)))
+    viaje_random = random.choice(identificadores)[0]
+    print(viaje_random)
+
+    # Buscamos info viaje
+    info_viaje = list(transporteDB.triples((viaje_random, None, None)))
+
+    viaje_elegido = Graph()
+    viaje_elegido.bind('ECSDI', ECSDI)
+
+    # Anadimos info viaje
+    for i in info_viaje:
+        viaje_elegido.add(i)
+
+    print(viaje_elegido.serialize(format='turtle'))
+
+    print("Acabamos OBTENER_TRANSPORTE_OPTIMO----------------------")
 
     print("Entramos en FETCH_QUEIRED_DATA---------------------------")
 

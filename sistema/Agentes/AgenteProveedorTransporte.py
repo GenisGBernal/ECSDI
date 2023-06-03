@@ -178,39 +178,39 @@ def fetch_queried_data(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
 
     logger.info(transporteDB.serialize(format='turtle'))
 
+    transporte = ECSDI['avion']
+
     flights_matching = f"""
-    SELECT ?billete ?identificador ?precio
-    WHERE {{
-        ?billete ECSDI:viajeTransporte ECSDI:avion .
-                ECSDI:identificador ?identificador .
-                ECSDI:precio ?precio .
-                ECSDI.LugarDePartida ?lugarDePartida_param .
-                ECSDI.LugarDeLlegada ?lugarDeLlegada_param .
-                ECSDI.DiaDePartida ?diaDePartida_param .
-                ECSDI.DiaDeRetorno ?diaDeRetorno_param .
-    }}
-    """
+             SELECT ?identificador ?precio
+        WHERE {{
+            ?billete ECSDI:viaje_transporte ?viaje_transporte_param ;
+                     ECSDI:identificador ?identificador ;
+                     ECSDI:precio ?precio ;
+                     ECSDI:DiaDePartida ?dia_partida_param ;
+                     ECSDI:DiaDeRetorno ?dia_retorno_param ;
+                     ECSDI:LugarDePartida ?lugar_partida_param ;
+                     ECSDI:LugarDeLlegada ?lugar_llegada_param .
+            FILTER (?viaje_transporte_param = <{transporte}>
+                    && ?dia_partida_param = "{dia_partida}"
+                    && ?dia_retorno_param = "{dia_retorno}"
+                    && ?lugar_partida_param = "{lugar_partida}"
+                    && ?lugar_llegada_param = "{lugar_llegada}")
+        }}
+        """
     logger.info(flights_matching)
 
-    # Execute the query
     resultsQuery = transporteDB.query(
         flights_matching,
-        initNs={'ECSDI': ECSDI},
-        initBindings={'lugarDePartida_param': Literal(lugar_partida, datatype=XSD.string),
-                      'lugarDeLlegada_param': Literal(lugar_llegada, datatype=XSD.string),
-                      'diaDePartida_param': Literal(dia_partida, datatype=XSD.string),
-                      'diaDeRetorno_param': Literal(dia_retorno, datatype=XSD.string)})
+        initNs={'ECSDI': ECSDI})
 
-    transporte = ECSDI['avion']
     gr = Graph()
     search_count = 0
+    logger.info('Vuelos encontrados: ' + str(len(resultsQuery)))
     for row in resultsQuery:
         search_count += 1
-        billete = row['billete']
         identificador = row['identificador']
         precio = row['precio']
 
-        logger.info('Billete:', billete)
         logger.info('Identificador:', identificador)
         logger.info('Precio:', precio)
         logger.info('---')
@@ -218,9 +218,12 @@ def fetch_queried_data(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
         gr.add((ECSDI[identificador], ECSDI.viaje_transporte, transporte))
         gr.add((ECSDI[identificador], ECSDI.precio, Literal(precio, datatype=XSD.float)))
         gr.add((ECSDI[identificador], ECSDI.LugarDePartida, Literal(lugar_partida, datatype=XSD.string)))
-        gr.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugar_partida, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
         gr.add((ECSDI[identificador], ECSDI.DiaDePartida, Literal(dia_partida, datatype=XSD.string)))
         gr.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
+
+    logger.info(gr.serialize(format='turtle'))
+    logger.info("salimos de FETCH_QUEIRED_DATA---------------------------")
 
     return gr
 
