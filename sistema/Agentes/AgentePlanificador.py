@@ -51,7 +51,7 @@ args = parser.parse_args()
 
 # Configuration stuff
 if args.port is None:
-    # TODO: PONER PUERTO QUE SEA UNICO
+    # TODO: PONER PUERTO QUE SEA UNICO 
     port = 9002
 else:
     port = args.port
@@ -142,7 +142,35 @@ def stop():
     shutdown_server()
     return "Parando Servidor"
 
-def obtener_hospedaje(primerDia, últimoDia):
+def obtener_hospedaje(p_salida, primerDia, últimoDia, cityCode):
+    gmess = Graph()
+    gmess.bind('ECSDI', ECSDI)
+    hospedaje_mess_uri = ECSDI['QuieroHospedaje' + str(getMessageCount())]
+    gmess.add((hospedaje_mess_uri, RDF.type, ECSDI.QuieroHospedaje))
+    gmess.add((hospedaje_mess_uri, ECSDI.viaje_ciudad, ECSDI[cityCode]))
+
+    # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
+    agenteProveedorHospedaje = getAgentInfo(DSO.AgenteProveedorHospedaje, AgenteDirectorio, AgentePlanificador, getMessageCount())
+
+    response_hosp = send_message(build_message(gmess, ACL['request'], sender=AgentePlanificador.uri, content= hospedaje_mess_uri, msgcnt=getMessageCount()) , agenteProveedorHospedaje.address)
+
+    response = clean_graph(response_hosp)
+    p_salida.send(response.serialize(format='xml'))
+    p_salida.close()
+
+    return
+
+
+    msgdic_hospedaje = get_message_properties(response_hosp)
+
+    if msgdic_hospedaje is not None and msgdic_hospedaje['performative'] == ACL.inform and 'content' in msgdic_hospedaje:
+        content_hosp = msgdic_hospedaje['content']
+        hotels = response_hosp.triples((content_hosp, ECSDI.viaje_hospedaje, None))
+        for _,_,hotel in hotels:
+            h_name = response_hosp.value(subject=hotel, predicate=ECSDI.identificador)
+            h_price = response_hosp.value(subject=hotel, predicate=ECSDI.precio)
+            print("RESULTADO HOSPEDAJE:", h_name, h_price)
+
     pass
 
 
@@ -211,9 +239,9 @@ def obtener_transporte(p_salida, lugar_partida, dia_partida, dia_retorno):
 def obtener_actividades(p_salida, fecha_llegada, fecha_salida, grado_ludica, grado_cultural, grado_festivo):
 
     global g_actividades
-
+    
     agenteProveedorActividades = getAgentInfo(DSO.AgenteProveedorActividades, AgenteDirectorio, AgentePlanificador, getMessageCount())
-
+    
     gmess = Graph()
     IAA = Namespace('IAActions')
     gmess.bind('foaf', FOAF)
@@ -237,18 +265,18 @@ def obtener_actividades(p_salida, fecha_llegada, fecha_salida, grado_ludica, gra
 
     p_salida.send(gr.serialize(format='xml'))
     p_salida.close()
-
+    
 
 def planificar_viaje(sujeto, gm):
 
     logger.info(gm.serialize(format='turtle'))
 
-    lugar_salida = gm.value(subject=sujeto, predicate=ECSDI.LugarDePartida)
-    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
-    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
-    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica)
-    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural)
-    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva)
+    lugar_salida = gm.value(subject=sujeto, predicate=ECSDI.LugarDePartida).toPython()
+    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida).toPython()
+    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno).toPython()
+    grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica).toPython()
+    grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural).toPython()
+    grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva).toPython()
 
     logger.info("Lugar salida: " + lugar_salida)
     logger.info("Fecha llegada: " + fecha_llegada)
@@ -257,28 +285,36 @@ def planificar_viaje(sujeto, gm):
     logger.info("Grado cultural: " + str(grado_cultural))
     logger.info("Grado ludica: " + str(grado_ludica))
 
-    # TODO: Llamar para obtener viajes, transporte y hospedaje en paralelo
+
 
     p_actividades_salida, p_actividades_entrada = Pipe()
     p1 = Process(target=obtener_actividades, args=(p_actividades_entrada, fecha_llegada,fecha_salida,grado_ludica,grado_cultural,grado_festivo))
     p1.start()
 
-    p_transportes_salida, p_transportes_entrada = Pipe()
-    p2 = Process(target=obtener_transporte, args=(p_transportes_entrada, lugar_salida, fecha_llegada, fecha_salida))
+    # p2 =
+    # p2.start() def obtener_hospedaje(p_salida, primerDia, últimoDia, cityCode):
+    cityCode = "LON"
+    p_hospedaje_salida, p_hospedaje_entrada = Pipe()
+    p2 = Process(target=obtener_hospedaje, args=(p_hospedaje_entrada, fecha_llegada, fecha_salida, cityCode))
     p2.start()
 
-    # p3 =
-    # p3.start()
+    p_transportes_salida, p_transportes_entrada = Pipe()
+    p3 = Process(target=obtener_transporte, args=(p_transportes_entrada, lugar_salida, fecha_llegada, fecha_salida))
+    p3.start()
 
     g_actividades = Graph()
     g_actividades.parse(data=p_actividades_salida.recv(), format='xml')
 
-    g_transportes = Graph()
-    g_transportes.parse(data=p_transportes_salida.recv(), format='xml')
+    g_hospedaje = Graph()
+    g_hospedaje.parse(data=p_hospedaje_salida.recv(), format='xml')
+
+    g_transporte = Graph()
+    g_transporte.parse(data=p_transportes_salida.recv(), format='xml')
 
     p1.join()
     p2.join()
-    # p3.join()
+    p3.join()
+
 
     gmess = Graph()
     IAA = Namespace('IAActions')
@@ -288,7 +324,8 @@ def planificar_viaje(sujeto, gm):
     gmess.add((sujeto, RDF.type, ECSDI.tiene_viaje))
 
     gmess += g_actividades
-    gmess += g_transportes
+    gmess += g_hospedaje
+    gmess += g_transporte
 
     return build_message(gmess, ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount(), content=sujeto)
 

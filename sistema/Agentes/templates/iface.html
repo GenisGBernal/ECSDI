@@ -9,7 +9,7 @@
 {% if error_message %}
     <p style="color: red;">{{ error_message }}</p>
 {% endif %}
-<form method="post" action="">
+<form method="post" action="/iface">
     <p><label>Usuario:</label> <input type="text" name="Usuario" required></p>
     <p><label>Lugar de salida</label> <input type="text" name="LugarDePartida" required></p>
     <p><label>Dia salida:</label> <input type="date" name="DiaDePartida" required></p>
@@ -27,7 +27,7 @@
         <input type="radio" name="grado_cultural" value=1> Algo
         <input type="radio" name="grado_cultural" value=0> Nada
 
-    <p><label for="grado_festivo">Cantidad de Cultural:</label></p>
+    <p><label for="grado_festivo">Cantidad de Festivo:</label></p>
         <input type="radio" name="grado_festivo" value=3 required> Mucho
         <input type="radio" name="grado_festivo" value=2> Normal
         <input type="radio" name="grado_festivo" value=1> Algo
