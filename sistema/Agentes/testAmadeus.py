@@ -72,6 +72,10 @@ try:
     lugar_llegada = 'BCN'
     dia_partida = '2023-09-01'
     dia_retorno = '2023-09-15'
+    lugar_partida_ont = Literal(lugar_partida, datatype=XSD.string)
+    lugar_llegada_ont = Literal(lugar_llegada, datatype=XSD.string)
+    dia_partida_ont = Literal(dia_partida, datatype=XSD.string)
+    dia_retorno_ont = Literal(dia_retorno, datatype=XSD.string)
     print("Entramos en REMOTE_TRANSPORT_SEARACH----------------------")
     transporteDB = Graph()
 
@@ -80,9 +84,13 @@ try:
     # departureDate='2023-09-01'
     # returnDate='2023-09-15'
     print('Dia partida: ' + dia_partida)
+    print('Dia partida ont: ' + dia_partida_ont)
     print('Dia retorno: ' + dia_retorno)
+    print('Dia retorno ont: ' + dia_retorno_ont)
     print('Lugar partida: ' + lugar_partida)
-    print('Lugar llegada: ' + lugar_partida)
+    print('Lugar partida ont: ' + lugar_partida_ont)
+    print('Lugar llegada: ' + lugar_llegada)
+    print('Lugar llegada_ont: ' + lugar_llegada_ont)
 
     response = amadeus.shopping.flight_offers_search.get(
         originLocationCode=lugar_partida,
@@ -116,21 +124,14 @@ try:
     print("Entramos en FETCH_QUEIRED_DATA---------------------------")
 
     flights_matching = f"""
-        SELECT ?identificador ?precio
-        WHERE {{
-            ?billete ECSDI.viaje_transporte ?viaje_transporte_param; 
-                     ECSDI.DiaDePartida ?dia_partida_param ;
-                     ECSDI.DiaDeRetorno ?dia_retorno_param ;
-                     ECSDI.LugarDePartida ?lugar_partida_param ;
-                     ECSDI.LugarDeLlegada ?lugar_llegada_param ;
-                     ECSDI.identificador ?identificador ;
-                     ECSDI.precio ?precio .
-            FILTER (?viaje_transporte_param = <{transporte}> &&
-                    ?dia_partida_param = "{Literal(dia_partida, datatype=XSD.string)}" &&
-                    ?dia_retorno_param = "{Literal(dia_retorno, datatype=XSD.string)}" &&
-                    ?lugar_partida_param = "{Literal(lugar_partida, datatype=XSD.string)}" &&
-                    ?lugar_llegada_param = "{Literal(lugar_llegada, datatype=XSD.string)}")
-        }}
+         SELECT ?identificador ?precio
+    WHERE {{
+        ?billete ECSDI:viaje_transporte ?viaje_transporte_param ;
+                 ECSDI:identificador ?identificador ;
+                 ECSDI:precio ?precio ;
+                 ECSDI:DiaDePartida ?dia_partida_param .
+        FILTER (?viaje_transporte_param = <{transporte}> && ?dia_partida_param = "{dia_partida}")
+    }}
     """
     print(flights_matching)
 
