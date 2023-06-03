@@ -253,7 +253,7 @@ def planificar_viaje(sujeto, gm):
     gmess.bind('foaf', FOAF)
     gmess.bind('iaa', IAA)
     sujeto = agn['planificador/PlanificacionDeViaje-' + str(getMessageCount())]
-    gmess.add((sujeto, RDF.type, ECSDI.tiene_viaje))
+    gmess.add((sujeto, RDF.type, ECSDI.ViajePendienteDeConfirmacion))
 
     gmess += g_actividades
     gmess += g_hospedaje

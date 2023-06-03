@@ -4,3 +4,4 @@ AgentePlanificador = 9002
 AgenteContratador = 9003
 AgenteProveedorHospedaje = 9004
 AgenteProveedorActividades = 9005
+AgenteGestorDeViajes = 9007
