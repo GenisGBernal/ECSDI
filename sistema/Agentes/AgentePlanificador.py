@@ -145,7 +145,9 @@ def obtener_hospedaje(primerDia, últimoDia):
     pass
 
 def obtener_transporte(p_salida, lugarDePartida, fechaSalida, fechaLlegada):
-    logger.info("Entro en OBTENER_TRANSPORTE")
+    logger.info("Entro en OBTENER_TRANSPORTE-----------------------------------------------")
+
+    lugarDeLlegada = 'BCN'
 
     global g_transportes
 
@@ -160,7 +162,7 @@ def obtener_transporte(p_salida, lugarDePartida, fechaSalida, fechaLlegada):
     gmess.add((sujeto, ECSDI.DiaDePartida, Literal(fechaSalida, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(fechaLlegada, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.LugarDePartida, Literal(lugarDePartida, datatype=XSD.string)))
-    gmess.add((sujeto, ECSDI.LugarDeLlegada, Literal('BCN', datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.LugarDeLlegada, Literal(lugarDeLlegada, datatype=XSD.string)))
 
     logger.info(gmess.serialize(format='turtle'))
 
@@ -232,7 +234,7 @@ def planificar_viaje(sujeto, gm):
     p1.start()
 
     p_transportes_salida, p_transportes_entrada = Pipe()
-    p2 = Process(target=obtener_transporte, args=(p_transportes_entrada, fecha_salida, fecha_llegada, lugar_salida))
+    p2 = Process(target=obtener_transporte, args=(p_transportes_entrada, lugar_salida, fecha_salida, fecha_llegada))
     p2.start()
 
     # p3 =

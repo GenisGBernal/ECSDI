@@ -15,11 +15,14 @@ import logging
 import argparse
 import random
 import uuid
+from multiprocessing import Process, Queue
+import logging
+import argparse
+import random
 
 from flask import Flask, request
 from rdflib import XSD, Graph, Namespace, Literal
 from rdflib.namespace import FOAF, RDF
-import requests
 
 from AgentUtil.ACL import ACL
 from AgentUtil.FlaskServer import shutdown_server
@@ -34,7 +37,6 @@ from AgentUtil.ACLMessages import registerAgent
 from AgentUtil.OntoNamespaces import ECSDI
 
 from amadeus import Client, ResponseError
-
 
 __author__ = 'javier'
 
@@ -51,7 +53,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--open', help="Define si el servidor esta abierto al exterior o no", action='store_true',
                     default=False)
 parser.add_argument('--verbose', help="Genera un log de la comunicacion del servidor web", action='store_true',
-                        default=False)
+                    default=False)
 parser.add_argument('--port', type=int, help="Puerto de comunicacion del agente")
 parser.add_argument('--dhost', help="Host del agente de directorio")
 parser.add_argument('--dport', type=int, help="Puerto de comunicacion del agente de directorio")
@@ -98,29 +100,30 @@ agn = Namespace("http://www.agentes.org#")
 # Contador de mensajes
 mss_cnt = 0
 
+
 def getMessageCount():
     global mss_cnt
     mss_cnt += 1
     return mss_cnt
 
+
 # Datos del Agente
 AgenteProveedorTransporte = Agent('AgenteProveedorTransporte',
-                                    agn.AgenteProveedorTransporte,
-                                    'http://%s:%d/comm' % (hostaddr, port),
-                                    'http://%s:%d/Stop' % (hostaddr, port))
+                                  agn.AgenteProveedorTransporte,
+                                  'http://%s:%d/comm' % (hostaddr, port),
+                                  'http://%s:%d/Stop' % (hostaddr, port))
 
 # Directory agent address
 AgenteDirectorio = Agent('AgenteDirectorio',
-                       agn.Directory,
-                       'http://%s:%d/Register' % (dhostname, dport),
-                       'http://%s:%d/Stop' % (dhostname, dport))
+                         agn.Directory,
+                         'http://%s:%d/Register' % (dhostname, dport),
+                         'http://%s:%d/Stop' % (dhostname, dport))
 
-# Global actividadesDB triplestore
+# Global transporteDB triplestore
 transporteDB = Graph()
 
 # Cola de comunicacion entre procesos
 cola1 = Queue()
-
 
 def register_message():
     """
@@ -137,26 +140,24 @@ def register_message():
     gr = registerAgent(AgenteProveedorTransporte, AgenteDirectorio, DSO.AgenteProveedorTransporte, getMessageCount())
     return gr
 
+
 def obtener_transporte(sujeto, gm):
     logger.info("Entramos en OBTENER_TRANSPORTE---------------------------")
-    fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida).toPython()
-    fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno).toPython()
-    lugar_partida = gm.value(subject=sujeto, predicate=ECSDI.LugarDePartida).toPython()
-    lugar_llegada = gm.value(subject=sujeto, predicate=ECSDI.LugarDeLlegada).toPython()
+    logger.info(gm.serialize(format='turtle'))
 
-    logger.info("Fecha llegada: " + fecha_llegada)
-    logger.info("Fecha salida: " + fecha_salida)
+    dia_partida = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida)
+    dia_retorno = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno)
+    lugar_partida = gm.value(subject=sujeto, predicate=ECSDI.LugarDePartida)
+    lugar_llegada = gm.value(subject=sujeto, predicate=ECSDI.LugarDeLlegada)
+
+    logger.info("Dia partida: " + str(dia_partida))
+    logger.info("Dia retorno: " + str(dia_retorno))
     logger.info("Lugar de partida: " + str(lugar_partida))
     logger.info("Lugar de llegada: " + str(lugar_llegada))
 
-    # logger.info("Fecha llegada: " + fecha_llegada.toPython())
-    # logger.info("Fecha salida: " + fecha_salida.toPython())
-    # logger.info("Lugar de partida: " + str(lugar_partida).toPython())
-    # logger.info("Lugar de llegada: " + str(lugar_llegada).toPyhton())
+    remote_transporte_search(dia_partida, dia_retorno, lugar_partida, lugar_llegada)
 
-    remote_transporte_search(fecha_llegada, fecha_salida, lugar_partida, lugar_llegada)
-
-    gr = fetch_queried_data(fecha_llegada, fecha_salida, lugar_partida, lugar_llegada)
+    gr = fetch_queried_data(dia_partida, dia_retorno, lugar_partida, lugar_llegada)
 
     IAA = Namespace('IAActions')
     gr.bind('foaf', FOAF)
@@ -164,26 +165,29 @@ def obtener_transporte(sujeto, gm):
     sujeto = ECSDI['Transporte-' + str(getMessageCount())]
     gr.add((sujeto, RDF.type, ECSDI.viaje_transporte))
 
-    print(gr.serialize(format='turtle'))
+    logger.info(gr.serialize(format='turtle'))
 
-    return build_message(gr, ACL['inform'], sender=AgenteProveedorTransporte.uri, msgcnt=getMessageCount(), content=sujeto)
+    return build_message(gr, ACL['inform'], sender=AgenteProveedorTransporte.uri, msgcnt=getMessageCount(),
+                         content=sujeto)
 
-def fetch_queried_data(fechaLlegada, fechaSalida, lugarDePartida, lugarDeLlegada):
+
+def fetch_queried_data(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
     logger.info("Entramos en FETCH_QUEIRED_DATA---------------------------")
+
     global transporteDB
 
-    search_count = 0
+    logger.info(transporteDB.serialize(format='turtle'))
 
     flights_matching = f"""
     SELECT ?billete ?identificador ?precio
     WHERE {{
-        ?billete rdf:type ECSDI:BilleteIdaVuelta;
-                ECSDI:identifcador ?identificador;
-                ECSDI:precio ?precio;
-                ECSDI.LugarDePartida ?lugarDePartida_param))
-                ECSDI.LugarDeLlegada ?lugarDeLlegada_param))
-                ECSDI.DiaDePartida, ?fechaSalida_param))
-                ECSDI.DiaDeRetorno, ?fechaLlegada_param))
+        ?billete ECSDI:viajeTransporte ECSDI:avion .
+                ECSDI:identificador ?identificador .
+                ECSDI:precio ?precio .
+                ECSDI.LugarDePartida ?lugarDePartida_param .
+                ECSDI.LugarDeLlegada ?lugarDeLlegada_param .
+                ECSDI.DiaDePartida ?diaDePartida_param .
+                ECSDI.DiaDeRetorno ?diaDeRetorno_param .
     }}
     """
     logger.info(flights_matching)
@@ -191,38 +195,37 @@ def fetch_queried_data(fechaLlegada, fechaSalida, lugarDePartida, lugarDeLlegada
     # Execute the query
     resultsQuery = transporteDB.query(
         flights_matching,
-        initNs={'ECSDI': ECSDI, 'rdf': RDF},
-        initBindings={'lugarDePartida_param': Literal(lugarDePartida, datatype=XSD.string),
-                        'lugarDeLlegada_param': Literal(lugarDeLlegada, datatype=XSD.string),
-                        'fechaSalida_param': Literal(fechaSalida, datatype=XSD.string),
-                        'fechaLlegada_param': Literal(fechaLlegada, datatype=XSD.string)})
+        initNs={'ECSDI': ECSDI},
+        initBindings={'lugarDePartida_param': Literal(lugar_partida, datatype=XSD.string),
+                      'lugarDeLlegada_param': Literal(lugar_llegada, datatype=XSD.string),
+                      'diaDePartida_param': Literal(dia_partida, datatype=XSD.string),
+                      'diaDeRetorno_param': Literal(dia_retorno, datatype=XSD.string)})
 
+    transporte = ECSDI['avion']
     gr = Graph()
-    # Process the results
+    search_count = 0
     for row in resultsQuery:
         search_count += 1
         billete = row['billete']
         identificador = row['identificador']
         precio = row['precio']
 
-        # Do something with the billete, identificador, and precio values
         logger.info('Billete:', billete)
         logger.info('Identificador:', identificador)
         logger.info('Precio:', precio)
         logger.info('---')
-        gr.add((ECSDI[identificador], ECSDI.identifcador, Literal(identificador, datatype=XSD.string)))
-        gr.add((ECSDI[identificador], RDF.type, ECSDI.BilleteIdaVuelta))
+        gr.add((ECSDI[identificador], ECSDI.identificador, Literal(identificador, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.viaje_transporte, transporte))
         gr.add((ECSDI[identificador], ECSDI.precio, Literal(precio, datatype=XSD.float)))
-        gr.add((ECSDI[identificador], ECSDI.viaje_transporte, ECSDI['avion']))
-        gr.add((ECSDI[identificador], ECSDI.LugarDePartida, Literal(lugarDePartida, datatype=XSD.string)))
-        gr.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugarDePartida, datatype=XSD.string)))
-        gr.add((ECSDI[identificador], ECSDI.DiaDePartida, Literal(fechaSalida, datatype=XSD.string)))
-        gr.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(fechaLlegada, datatype=XSD.string)))
-
+        gr.add((ECSDI[identificador], ECSDI.LugarDePartida, Literal(lugar_partida, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugar_partida, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.DiaDePartida, Literal(dia_partida, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
 
     return gr
 
-def remote_transporte_search(fechaLlegada, fechaSalida, lugarDePartida, lugarDeLlegada):
+
+def remote_transporte_search(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
     logger.info("Entramos en REMOTE_TRANSPORT_SEARACH----------------------")
     global transporteDB
 
@@ -230,51 +233,37 @@ def remote_transporte_search(fechaLlegada, fechaSalida, lugarDePartida, lugarDeL
     # cityArrival = 'BCN'
     # departureDate='2023-09-01'
     # returnDate='2023-09-15'
-    logger.info('Fecha salida: ' + fechaSalida)
-    logger.info('Fecha llegada: ' + fechaLlegada)
-    logger.info('Lugar salida: ' + lugarDePartida)
-    logger.info('Lugar llegada: ' + lugarDePartida)
-    transport = 'avion'
-
-
+    logger.info('Dia partida: ' + dia_partida)
+    logger.info('Dia retorno: ' + dia_retorno)
+    logger.info('Lugar partida: ' + lugar_partida)
+    logger.info('Lugar llegada: ' + lugar_partida)
 
     response = amadeus.shopping.flight_offers_search.get(
-        originLocationCode=lugarDePartida,
-        destinationLocationCode=lugarDeLlegada,
-        departureDate=fechaSalida,
-        returnDate=fechaLlegada,
+        originLocationCode=lugar_partida,
+        destinationLocationCode=lugar_llegada,
+        departureDate=dia_partida,
+        returnDate=dia_retorno,
         adults=1,
         currencyCode='EUR',
         max=10)
 
     logger.info("TOTAL NUMBER OF FLIGHTS: " + str(len(response.data)))
 
-    transporte = ECSDI[transport]
-    # ciudadSalida = ECSDI[cityDeparture]
-    # ciudadLlegada = ECSDI[cityArrival]
-    # fechaSalida = ECSDI[departureDate]
-    # fechaLlegada = ECSDI[returnDate]
-
-    # transporteDB.add((fechaSalida, RDF.type, ECSDI.Fecha))
-    # transporteDB.add((fechaLlegada, RDF.type, ECSDI.Fecha))
-    # transporteDB.add((lugarDePartida, RDF.type, ECSDI.Ciudad))
-    # transporteDB.add((lugarDeLlegada, RDF.type, ECSDI.Ciudad))
-    # transporteDB.add((transporte, RDF.type, ECSDI.Transporte))
+    transporte = ECSDI['avion']
 
     for f in response.data:
         flight_id = str(uuid.uuid4())
-        flight_price= float(f['price']['grandTotal'])
+        flight_price = float(f['price']['grandTotal'])
 
         identificador = ECSDI[flight_id]
 
-        transporteDB.add((ECSDI[identificador], ECSDI.identifcador, Literal(flight_id, datatype=XSD.string)))
-        transporteDB.add((ECSDI[identificador], RDF.type, ECSDI.BilleteIdaVuelta))
+        transporteDB.add((ECSDI[identificador], ECSDI.identificador, Literal(flight_id, datatype=XSD.string)))
         transporteDB.add((ECSDI[identificador], ECSDI.precio, Literal(flight_price, datatype=XSD.float)))
         transporteDB.add((ECSDI[identificador], ECSDI.viaje_transporte, transporte))
-        transporteDB.add((ECSDI[identificador], ECSDI.LugarDePartida, lugarDePartida))
-        transporteDB.add((ECSDI[identificador], ECSDI.LugarDeLlegada, lugarDeLlegada))
-        transporteDB.add((ECSDI[identificador], ECSDI.DiaDePartida, fechaSalida))
-        transporteDB.add((ECSDI[identificador], ECSDI.DiaDeRetorno, fechaLlegada))
+        transporteDB.add((ECSDI[identificador], ECSDI.LugarDePartida, Literal(lugar_partida, datatype=XSD.string)))
+        transporteDB.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
+        transporteDB.add((ECSDI[identificador], ECSDI.DiaDePartida, Literal(dia_partida, datatype=XSD.string)))
+        transporteDB.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
 
     logger.info(transporteDB.serialize(format='turtle'))
 
@@ -329,14 +318,16 @@ def comunicacion():
     # Comprobamos que sea un mensaje FIPA ACL
     if msgdic is None:
         # Si no es, respondemos que no hemos entendido el mensaje
-        gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri, msgcnt=getMessageCount())
+        gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri,
+                           msgcnt=getMessageCount())
     else:
         # Obtenemos la performativa
         perf = msgdic['performative']
 
         if perf != ACL.request:
             # Si no es un request, respondemos que no hemos entendido el mensaje
-            gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri, msgcnt=getMessageCount())
+            gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri,
+                               msgcnt=getMessageCount())
         else:
             # Extraemos el objeto del contenido que ha de ser una accion de la ontologia de acciones del agente
             # de registro
@@ -351,11 +342,13 @@ def comunicacion():
                     gr = obtener_transporte(sujeto, gm)
                 else:
                     # Si no es ninguna de las acciones conocontentcidas, respondemos que no hemos entendido el mensaje
-                    gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri, msgcnt=getMessageCount())
+                    gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri,
+                                       msgcnt=getMessageCount())
 
             else:
                 print('No content')
-                gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri, msgcnt=getMessageCount())
+                gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorTransporte.uri,
+                                   msgcnt=getMessageCount())
     logger.info('Respondemos a la peticion')
 
     return gr.serialize(format='xml')
@@ -389,7 +382,6 @@ def agentbehavior1(cola):
             fin = True
         else:
             print(v)
-
 
 
 if __name__ == '__main__':
