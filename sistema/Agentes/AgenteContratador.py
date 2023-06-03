@@ -125,6 +125,51 @@ def obtener_info_actividad(sujeto, g, franja):
         'subtipo_actividad': subtipo_actividad
     }
 
+def obtener_info_transporte(grafo_viaje):
+    transporte = ECSDI['avion']
+
+    info_relevante_vuelo = []
+
+    query = f"""
+        SELECT ?identificador ?precio ?dia_partida ?dia_retorno ?lugar_partida ?lugar_llegada
+        WHERE {{
+            ?billete ECSDI:viaje_transporte ?viaje_transporte_param ;
+                     ECSDI:identificador ?identificador ;
+                     ECSDI:precio ?precio ;
+                     ECSDI:DiaDePartida ?dia_partida ;
+                     ECSDI:DiaDeRetorno ?dia_retorno ;
+                     ECSDI:LugarDePartida ?lugar_partida ;
+                     ECSDI:LugarDeLlegada ?lugar_llegada .
+                FILTER (?viaje_transporte_param = <{transporte}>)
+            }}
+            LIMIT 1
+            """
+    logger.info(query)
+
+    resultsQuery = grafo_viaje.query(
+        query,
+        initNs={'ECSDI': ECSDI})
+
+    info_general = {'nombre': 'Informacion general', 'info': []}
+    info_viaje_ida = {'nombre': 'Informacion viaje ida', 'info': []}
+    info_viaje_vuelta = {'nombre': 'Informacion viaje vuelta', 'info': []}
+
+    for result in resultsQuery:
+        info_general['info'] = ['Identificador : ' + str(result.identificador.toPython()),
+                        'Precio total: ' + str(result.precio.toPython()) + '€']
+
+        info_viaje_ida['info'] = ['Fecha vuelo : ' + str(result.dia_partida.toPython()),
+                          'Ciudad salida : ' + str(result.lugar_partida.toPython()),
+                          'Ciudad llegada: ' + str(result.lugar_llegada.toPython())]
+
+        info_viaje_vuelta['info'] = ['Fecha vuelo : ' + str(result.dia_retorno.toPython()),
+                             'Ciudad salida : ' + str(result.lugar_llegada.toPython()),
+                             'Ciudad llegada: ' + str(result.lugar_partida.toPython())]
+
+    info_vuelo = [info_general, info_viaje_ida, info_viaje_vuelta]
+
+    return info_vuelo
+
 def obtener_actividades(grafo_viaje):
 
     lista_actividades_completa = []
@@ -234,10 +279,10 @@ def browser_iface():
 
         print(gr.serialize(format='turtle'))
 
-
+        transporte = obtener_info_transporte(gr)
         actividades = obtener_actividades(gr)
 
-        return render_template('propuesta_viaje.html', actividades=actividades)
+        return render_template('propuesta_viaje.html', actividades=actividades, transporte=transporte)
 
 
 @app.route("/stop")
