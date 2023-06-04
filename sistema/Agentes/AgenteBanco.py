@@ -13,13 +13,13 @@ from multiprocessing import Process, Queue
 import logging
 import argparse
 
-from flask import Flask, request
+from flask import Flask, render_template, request
 from rdflib import XSD, Graph, Namespace, Literal
 from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, send_message, get_message_properties
+from AgentUtil.ACLMessages import build_message, clean_graph, send_message, get_message_properties
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.DSO import DSO
@@ -57,7 +57,7 @@ args = parser.parse_args()
 
 # Configuration stuff
 if args.port is None:
-    port = 9004
+    port = 9008
 else:
     port = args.port
 
@@ -97,8 +97,8 @@ def getMessageCount():
     return mss_cnt
 
 # Datos del Agente
-AgenteProveedorHospedaje = Agent('AgenteProveedorHospedaje',
-                                    agn.AgenteProveedorHospedaje,
+AgenteBanco = Agent('AgenteBanco',
+                                    agn.AgenteBanco,
                                     'http://%s:%d/comm' % (hostaddr, port),
                                     'http://%s:%d/Stop' % (hostaddr, port))
 
@@ -109,7 +109,33 @@ AgenteDirectorio = Agent('AgenteDirectorio',
                        'http://%s:%d/Stop' % (dhostname, dport))
 
 # Global hospedajeDB triplestore
-hospedajeDB = Graph()
+cuentas_corrientes = Graph()
+
+def init_cuentas_corrientes():
+    # Se inician cuentas corrientes con solo nombre de usuario y numero de tarjeta de credito
+    nombres = ['Pepe', 'Juan', 'Maria', 'Luis', 'Ana', 'Paco', 'Lola', 'Rosa', 'Pablo', 'Sara']
+    tarjetas = ['123456789', '987654321', '123123123', '456456456', '789789789', '321321321', '654654654', '987987987', '159159159', '753753753']
+    for i,n in enumerate(nombres):
+        cuenta = ECSDI['CuentaCorriente/' + n]
+        cuentas_corrientes.add((cuenta, RDF.type, ECSDI.CuentaCorriente))
+        cuentas_corrientes.add((cuenta, ECSDI.nombre, Literal(n, datatype=XSD.string)))
+        cuentas_corrientes.add((cuenta, ECSDI.numero_tarjeta, Literal(tarjetas[i], datatype=XSD.string)))
+        cuentas_corrientes.add((cuenta, ECSDI.saldo, Literal(10000, datatype=XSD.float)))
+
+init_cuentas_corrientes()
+
+
+def obten_cuentas_corrientes():
+    ccs = []
+    for s,p,o in cuentas_corrientes.triples((None, RDF.type, ECSDI.CuentaCorriente)):
+        cuenta = {}
+        cuenta['nombre'] = cuentas_corrientes.value(subject=s, predicate=ECSDI.nombre).toPython()
+        cuenta['numero_tarjeta'] = cuentas_corrientes.value(subject=s, predicate=ECSDI.numero_tarjeta).toPython()
+        cuenta['saldo'] = cuentas_corrientes.value(subject=s, predicate=ECSDI.saldo).toPython()
+        ccs.append(cuenta)
+    return ccs
+       
+        
 
 # Cola de comunicacion entre procesos
 cola1 = Queue()
@@ -127,29 +153,9 @@ def register_message():
 
     logger.info('Nos registramos')
 
-    gr = registerAgent(AgenteProveedorHospedaje, AgenteDirectorio, DSO.AgenteProveedorHospedaje, getMessageCount())
+    gr = registerAgent(AgenteBanco, AgenteDirectorio, DSO.AgenteBanco, getMessageCount())
     return gr
 
-
-def remote_hospedaje_search(cityCode):
-    global hospedajeDB
-
-    # Hotels query
-    #cityCode = 'LON'
-    response = amadeus.reference_data.locations.hotels.by_city.get(cityCode=cityCode)
-    # amadeus.shopping.hotel_offers_search.get(cityCode='LON')
-    city = ECSDI[cityCode]
-    hospedajeDB.add((city, RDF.type, ECSDI.Ciudad))
-    print("TOTAL NUMBER OF HOTELS: " + str(len(response.data)))
-    for h in response.data:
-        hotel_name = h['name']
-        hotel_id = ECSDI['hotel/'+h['hotelId']]
-        hospedajeDB.add((ECSDI[hotel_id], RDF.type, ECSDI.Hospedaje))
-        hospedajeDB.add((ECSDI[hotel_id], ECSDI.identificador, Literal(hotel_name, datatype=XSD.string)))
-        hospedajeDB.add((ECSDI[hotel_id], ECSDI.precio, Literal(100, datatype=XSD.float)))
-        hospedajeDB.add((ECSDI[hotel_id], ECSDI.viaje_ciudad, city))
-
-    
 
 
 @app.route("/iface", methods=['GET', 'POST'])
@@ -158,7 +164,7 @@ def browser_iface():
     Permite la comunicacion con el agente via un navegador
     via un formulario
     """
-    return 'Nothing to see here'
+    return render_template('cuentas_bancarias.html', cuentas=obten_cuentas_corrientes())
 
 
 @app.route("/stop")
@@ -171,6 +177,54 @@ def stop():
     tidyup()
     shutdown_server()
     return "Parando Servidor"
+
+
+def process_payment(gm, content):
+    print("Processing payment")
+    price_to_pay = gm.value(subject=content, predicate=ECSDI.precio_total).toPython()
+    tarjeta = gm.value(subject=content, predicate=ECSDI.numero_tarjeta)
+    print("Price to pay: ", price_to_pay)
+
+    gr = Graph()
+    IAA = Namespace('IAActions')
+    gr.bind('ECSDI', ECSDI)
+    gr.bind('foaf', FOAF)
+    gr.bind('ia', IAA)
+
+
+    # Get the payment info
+
+    # Check if the payment is accepted
+    global cuentas_corrientes
+    cc_subject = cuentas_corrientes.value(predicate=ECSDI.numero_tarjeta, object=Literal(tarjeta, datatype=XSD.string))
+
+    saldo_actual = cuentas_corrientes.value(subject=cc_subject, predicate=ECSDI.saldo).toPython()
+    print("Saldo actual: ", saldo_actual)
+
+    if saldo_actual < price_to_pay:
+        rechazo = ECSDI['Rechazo-' + str(getMessageCount())]
+        gr.add((rechazo, RDF.type, ECSDI.Rechazo))
+        gr.add((rechazo, ECSDI.transaccion, content))
+        gr.add((rechazo, ECSDI.motivo, Literal("Saldo insuficiente", datatype=XSD.string)))
+        return build_message(gr,
+                                 ACL.inform,
+                                 sender=AgenteBanco.uri,
+                                 msgcnt=mss_cnt,
+                                 content=rechazo)
+    
+    # Update the balance
+    cuentas_corrientes.set((cc_subject, ECSDI.saldo, Literal(saldo_actual - price_to_pay, datatype=XSD.float)))
+
+    # Send the confirmation
+    confirmacion = ECSDI['Confirmacion-' + str(getMessageCount())]
+    gr.add((confirmacion, RDF.type, ECSDI.Confirmacion))
+    gr.add((confirmacion, ECSDI.transaccion, content))
+    return build_message(gr,
+                                ACL.inform,
+                                sender=AgenteBanco.uri,
+                                msgcnt=mss_cnt,
+                                content=confirmacion)
+
 
 
 @app.route("/comm")
@@ -187,82 +241,7 @@ def comunicacion():
     """
     global mss_cnt
 
-    logger.info('Peticion de informacion recibida')
-
-    def process_hospedaje_search():
-        # Recibimos una peticion de busqueda de hospedaje
-
-        logger.info('Peticion de busqueda de hospedaje: ' + city)
-
-        hotels_in_city = f"""
-        SELECT ?hospedaje ?identificador ?precio 
-        WHERE {{
-            ?hospedaje rdf:type ECSDI:Hospedaje;
-                        ECSDI:identificador ?identificador;
-                        ECSDI:precio ?precio;
-                        ECSDI:viaje_ciudad {'<'+city+'>'}.
-        }}
-        LIMIT 5   
-        """
-
-        
-
-        city_search = hospedajeDB.query(hotels_in_city, initNs={'ECSDI': ECSDI})
-        print("CITY SEARCH:", len(city_search))
-
-        # This will be changed to a conditional
-        if len(city_search) < 5:
-            try:
-                remote_hospedaje_search('LON')
-            except ResponseError as error:
-                print(error)
-                return build_message(Graph(),
-                                    ACL.inform,
-                                    sender=AgenteProveedorHospedaje.uri,
-                                    msgcnt=mss_cnt)
-        
-        city_search = hospedajeDB.query(hotels_in_city, initNs={'ECSDI': ECSDI})
-        print("2. CITY SEARCH:", city_search)
-
-        if city_search is not None:
-            for x in city_search:
-                print("X:", x)
-
-        if city_search is not None:
-            gr = Graph()
-            gr.bind('ECSDI', ECSDI)
-
-            uri_mensaje = ECSDI['TomaHospedaje' + str(getMessageCount())]
-            gr.add((uri_mensaje, RDF.type, ECSDI.TomaHospedaje))
-            for res in city_search:
-                
-                hotel_uri, hotel_name, hotel_price = res
-
-                print("HOTEL URI:", hotel_uri)
-
-                
-
-                gr.add((hotel_uri, RDF.type, ECSDI.Hospedaje))
-                gr.add((hotel_uri, ECSDI.identificador, Literal(hotel_name, datatype=XSD.string)))
-                gr.add((hotel_uri, ECSDI.precio, Literal(hotel_price, datatype=XSD.float)))
-                gr.add((hotel_uri, ECSDI.viaje_ciudad, city))
-
-
-                
-                gr.add((uri_mensaje, ECSDI.viaje_hospedaje, hotel_uri))
-
-                logger.info("Hospedaje encontrado: " + hotel_name)
-            return build_message(gr,
-                                 ACL.inform,
-                                 sender=AgenteProveedorHospedaje.uri,
-                                 msgcnt=mss_cnt,
-                                 content=uri_mensaje,)
-        else:
-            # Si no encontramos nada retornamos un inform sin contenido
-            return build_message(Graph(),
-                                ACL.inform,
-                                sender=AgenteProveedorHospedaje.uri,
-                                msgcnt=mss_cnt)
+    logger.info('Peticion de cobro recibida')
 
     # Extraemos el mensaje y creamos un grafo con el
     message = request.args['content']
@@ -275,14 +254,14 @@ def comunicacion():
     # Comprobamos que sea un mensaje FIPA ACL
     if msgdic is None:
         # Si no es, respondemos que no hemos entendido el mensaje
-        gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorHospedaje.uri, msgcnt=getMessageCount())
+        gr = build_message(Graph(), ACL['not-understood'], sender=AgenteBanco.uri, msgcnt=getMessageCount())
     else:
         # Obtenemos la performativa
         perf = msgdic['performative']
 
         if perf != ACL.request:
             # Si no es un request, respondemos que no hemos entendido el mensaje
-            gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorHospedaje.uri, msgcnt=getMessageCount())
+            gr = build_message(Graph(), ACL['not-understood'], sender=AgenteBanco.uri, msgcnt=getMessageCount())
         else:
             # Extraemos el objeto del contenido que ha de ser una accion de la ontologia de acciones del agente
             # de registro
@@ -291,20 +270,20 @@ def comunicacion():
             if 'content' in msgdic:
                 content = msgdic['content']
                 accion = gm.value(subject=content, predicate=RDF.type)
-                city = gm.value(subject=content, predicate=ECSDI.viaje_ciudad)
 
-                if accion == ECSDI.QuieroHospedaje:
-                    logger.info('Peticion de Hospedaje')
-                    gr = process_hospedaje_search()
+                if accion == ECSDI.Transaccion:
+                    logger.info('Transaccion Recibida')
+
+                    gr = process_payment(gm, content)
+                    
                 else:
                     # Si no es ninguna de las acciones conocontentcidas, respondemos que no hemos entendido el mensaje
-                    gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorHospedaje.uri, msgcnt=getMessageCount())
+                    gr = build_message(Graph(), ACL['not-understood'], sender=AgenteBanco.uri, msgcnt=getMessageCount())
 
             else:
                 print('No content')
-                gr = build_message(Graph(), ACL['not-understood'], sender=AgenteProveedorHospedaje.uri, msgcnt=getMessageCount())
+                gr = build_message(Graph(), ACL['not-understood'], sender=AgenteBanco.uri, msgcnt=getMessageCount())
     
-    mss_cnt += 1
     logger.info('Respondemos a la peticion')
     print("RESPUESTA: ", gr.serialize(format='turtle'))
 
@@ -327,7 +306,7 @@ def agentbehavior1(cola):
     :return:
     """
     # Registramos el agente
-    gr = register_message()
+    #gr = register_message()
 
     # Escuchando la cola hasta que llegue un 0
     fin = False
@@ -339,6 +318,7 @@ def agentbehavior1(cola):
             fin = True
         else:
             print(v)
+
 
 
 

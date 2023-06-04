@@ -9,7 +9,8 @@ Agente que se registra como agente de hoteles y espera peticiones
 @author: javier
 """
 
-from datetime import datetime
+from datetime import datetime as time_converter
+import datetime
 from multiprocessing import Process, Queue
 import logging
 import argparse
@@ -104,7 +105,7 @@ def getMessageCount():
 
 # Datos del Agente
 AgenteProveedorActividades = Agent('AgenteProveedorActivdades',
-                                    agn.AgenteProveedorActivdades,
+                                    agn.AgenteProveedorActividades,
                                     'http://%s:%d/comm' % (hostaddr, port),
                                     'http://%s:%d/Stop' % (hostaddr, port))
 
@@ -116,6 +117,7 @@ AgenteDirectorio = Agent('AgenteDirectorio',
 
 # Global actividadesDB triplestore
 actividadesDB = Graph()
+actividadesDB.bind('ECSDI', ECSDI)
 
 # Cola de comunicacion entre procesos
 cola1 = Queue()
@@ -136,11 +138,15 @@ def register_message():
     gr = registerAgent(AgenteProveedorActividades, AgenteDirectorio, DSO.AgenteProveedorActividades, getMessageCount())
     return gr
 
-def obtener_diferencia_en_dias(fecha1, fecha2):
+def string_a_fecha(fecha_en_string):
     formato = "%Y-%m-%d"
 
-    fecha1_obj = datetime.strptime(fecha1, formato).date()
-    fecha2_obj = datetime.strptime(fecha2, formato).date()
+    return time_converter.strptime(fecha_en_string, formato).date()
+
+def obtener_diferencia_en_dias(fecha1, fecha2):
+
+    fecha1_obj = string_a_fecha(fecha1)
+    fecha2_obj = string_a_fecha(fecha2)
 
     return abs((fecha2_obj - fecha1_obj).days) + 1
 
@@ -226,6 +232,7 @@ def obtener_actividad(tipo_actividad):
     IAA = Namespace('IAActions')
     gr.bind('foaf', FOAF)
     gr.bind('iaa', IAA)
+    gr.bind('ECSDI', ECSDI)
     gr.add((sujeto, RDF.type, ECSDI.actividad))    
     gr.add((sujeto, ECSDI.tipo_actividad, actividadesDB.value(subject=sujeto, predicate=ECSDI.tipo_actividad)))
     gr.add((sujeto, ECSDI.subtipo_actividad, actividadesDB.value(subject=sujeto, predicate=ECSDI.subtipo_actividad)))
@@ -236,15 +243,17 @@ def obtener_actividad(tipo_actividad):
     return gr
 
 
-def obtener_actividades_un_dia(dia, tipo_actividad_manana, tipo_actividad_tarde, tipo_actividad_noche):
+def obtener_actividades_un_dia(sujeto_viaje, dia, tipo_actividad_manana, tipo_actividad_tarde, tipo_actividad_noche):
 
     gr = Graph()
     IAA = Namespace('IAActions')
     gr.bind('foaf', FOAF)
     gr.bind('iaa', IAA)
+    gr.bind('ECSDI', ECSDI)
     sujeto = ECSDI['ActividadesParaUnDia-' + str(getMessageCount())]
+    gr.add((sujeto_viaje, ECSDI.ActividadesOrdenadas, sujeto))
     gr.add((sujeto, RDF.type, ECSDI.actividades_ordenadas))
-    gr.add((sujeto, ECSDI.dia, Literal(dia, datatype=XSD.integer)))
+    gr.add((sujeto, ECSDI.dia, Literal(dia, datatype=XSD.string)))
 
     gr_actividad_de_manana = obtener_actividad(tipo_actividad=tipo_actividad_manana)
     sujeto_actividad_de_manana = gr_actividad_de_manana.value(predicate=RDF.type, object=ECSDI.actividad)
@@ -296,12 +305,14 @@ def obtener_intervalo_actividades(sujeto, gm):
     IAA = Namespace('IAActions')
     gr.bind('foaf', FOAF)
     gr.bind('iaa', IAA)
+    gr.bind('ECSDI', ECSDI)
     sujeto = ECSDI['IntervaloDeActividades-' + str(getMessageCount())]
     gr.add((sujeto, RDF.type, ECSDI.viaje_actividades))
 
     for i in range(duracion_vacaciones):
         gr += obtener_actividades_un_dia(
-            dia = i+1,
+            sujeto_viaje = sujeto,
+            dia = string_a_fecha(fecha_llegada) + datetime.timedelta(days=i),
             tipo_actividad_manana= tipo_actividades[i*3],
             tipo_actividad_tarde= tipo_actividades[i*3+1], 
             tipo_actividad_noche= tipo_actividades[i*3+2])
@@ -381,6 +392,14 @@ def comunicacion():
                 if accion == ECSDI.IntervaloDeActividades:
                     logger.info('Peticion de intervalo de actividades')
                     gr = obtener_intervalo_actividades(sujeto, gm)
+                
+                elif accion == ECSDI.ActividadCubierta:
+                    logger.info('Peticion de actividad cubierta')
+                    gr = obtener_actividad(ECSDI.tipo_ludica)
+                    gr = build_message(gr, ACL['inform'], 
+                                       sender=AgenteProveedorActividades.uri, 
+                                       msgcnt=getMessageCount())
+
 
     logger.info('Respondemos a la peticion')
 
@@ -420,9 +439,6 @@ def agentbehavior1(cola):
 
 if __name__ == '__main__':
     # Ponemos en marcha los behaviors
-    # ab1 = Process(target=agentbehavior1, args=(cola1,))
-    # ab1.start()
-
     ab1 = Process(target=agentbehavior1, args=(cola1,))
     ab1.start()
 

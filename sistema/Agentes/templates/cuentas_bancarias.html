@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+
+{% if error_message %}
+<p style="color: red;">{{ error_message }}</p>
+{% endif %}
+
+<h3>Cuentas bancarias:</h3>
+<ul>
+    {% for cuenta in cuentas %}
+    <li>Nombre: {{cuenta.nombre}}</li>
+    <li>Tarjeta: {{cuenta.numero_tarjeta}}</li>
+    <li>Saldo: {{cuenta.saldo}}</li>
+    <br>
+    {% endfor %}
+</ul>
+
+</body>
+</html>

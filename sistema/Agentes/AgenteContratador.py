@@ -12,6 +12,8 @@ Created on 09/02/2014
 @author: javier
 """
 
+import datetime
+from datetime import datetime as time_converter
 from multiprocessing import Process
 import logging
 import argparse
@@ -23,7 +25,7 @@ from rdflib.namespace import FOAF, RDF
 from AgentUtil.ACL import ACL
 from AgentUtil.DSO import DSO
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, send_message, getAgentInfo, get_message_properties
+from AgentUtil.ACLMessages import build_message, send_message, getAgentInfo, get_message_properties, clean_graph
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.Util import gethostname
@@ -104,7 +106,15 @@ DirectoryAgent = Agent('DirectoryAgent',
                        'http://%s:%d/Stop' % (dhostname, dport))
 
 # Global dsgraph triplestore
-dsgraph = Graph()
+viaje_pendiente_confirmacion = Graph()
+
+propuesta_viaje = None
+
+def string_a_fecha(fecha_en_string):
+    formato = "%Y-%m-%d"
+
+    return time_converter.strptime(fecha_en_string, formato).date()
+
 
 def obtener_info_actividad(sujeto, g, franja):
     nombre = g.value(subject=sujeto, predicate=ECSDI.nombre_actividad).toPython()
@@ -195,9 +205,17 @@ def obtener_actividades(grafo_viaje):
         }
         lista_actividades_completa.append(actividad_un_dia)
 
-    lista_actividades_completa = sorted(lista_actividades_completa, key=lambda x: x['dia'])
+    lista_actividades_completa = sorted(lista_actividades_completa, key=lambda x: string_a_fecha(x['dia']))
 
     return lista_actividades_completa
+
+
+def obten_precio_total(grafo_viaje):
+
+    sujeto = grafo_viaje.value(predicate=RDF.type, object=ECSDI.ViajePendienteDeConfirmacion)
+    precio_total = grafo_viaje.value(subject=sujeto, predicate=ECSDI.precio_total).toPython()
+
+    return precio_total
 
 
 def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, grado_ludica, grado_cultural, grado_festivo):
@@ -210,6 +228,7 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, g
     IAA = Namespace('IAActions')
     gmess.bind('foaf', FOAF)
     gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
     sujeto = agn['PeticiónDeViaje-' + str(getMessageCount())]
     gmess.add((sujeto, RDF.type, ECSDI.PeticionDeViaje))
     gmess.add((sujeto, ECSDI.Usuario, Literal(usuario, datatype=XSD.string)))
@@ -230,8 +249,60 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, g
 
     log.info("Petición de viaje al AgentePlanificador")
     gr = send_message(msg, agentePlanificador.address)
+    gr = clean_graph(gr)
     log.info("Respuesta recibida")
     return gr
+
+def peticion_de_cobro(tarjeta_id):
+    agenteCobrador = getAgentInfo(DSO.AgenteCobrador, DirectoryAgent, AgenteContratador, getMessageCount())
+
+    sujeto = agn['QuieroCobrarViaje-' + str(getMessageCount())]
+
+    global viaje_pendiente_confirmacion
+
+
+    if not viaje_pendiente_confirmacion:
+        print("No hay viaje pendiente de confirmación")
+        return False
+    
+
+    print("VIAJE GUARDADO:")
+    print(viaje_pendiente_confirmacion.serialize(format='turtle'))
+
+    gmess = Graph() + viaje_pendiente_confirmacion
+    IAA = Namespace('IAActions')
+    gmess.bind('foaf', FOAF)
+    gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
+    gmess.add((sujeto, RDF.type, ECSDI.QuieroCobrarViaje))
+
+    le_viaje = gmess.value(predicate=RDF.type, object=ECSDI.ViajePendienteDeConfirmacion)
+
+    if le_viaje is None:
+        return False
+
+    gmess.add((sujeto, ECSDI.tiene_viaje, le_viaje))
+    gmess.add((sujeto, ECSDI.numero_tarjeta, Literal(tarjeta_id, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.precio_total, Literal(obten_precio_total(viaje_pendiente_confirmacion), datatype=XSD.float)))
+
+    msg = build_message(gmess, perf=ACL.request,
+                        sender=AgenteContratador.uri,
+                        receiver=agenteCobrador.uri,
+                        msgcnt=getMessageCount(),
+                        content=sujeto)
+    
+    logger.info("Petición de cobro al AgenteCobrador")
+    gr = send_message(msg, agenteCobrador.address)
+    
+    print(gr.serialize(format='turtle'))
+
+    gr = clean_graph(gr)
+    response_subject = gr.value(predicate=RDF.type, object=ECSDI.TomaCobroAcceptado)
+    if response_subject is not None:
+        return True
+    else:
+        return False
+
 
 
 @app.route("/respuesta-propuesta-viaje", methods=['POST'])
@@ -239,15 +310,44 @@ def recibir_respuesta_propuesta_viaje():
     if request.method == 'POST':
         respuesta = request.form['respuesta']
         if respuesta == "si":
+            tarjeta_id = request.form['tarjeta']
+            success = peticion_de_cobro(tarjeta_id)
+            
+            if success: 
+                agenteGestorDeViajes = getAgentInfo(DSO.AgenteGestorDeViajes, DirectoryAgent, AgenteContratador, getMessageCount())
 
-            # TODO: Llamada a cobro
-
-            # TODO: Llamada viajes confirmados
-
-            return render_template('viaje_confirmado.html')
+                sujeto = propuesta_viaje.value(predicate=RDF.type, object=ECSDI.ViajePendienteDeConfirmacion)
+                msg = build_message(propuesta_viaje, perf=ACL.request,
+                            sender=AgenteContratador.uri,
+                            receiver=agenteGestorDeViajes.uri,
+                            msgcnt=getMessageCount(),
+                            content=sujeto)
+                gr = send_message(msg, agenteGestorDeViajes.address)
+                return render_template('viaje_confirmado.html')
+            else: 
+                global viaje_pendiente_confirmacion
+                actividades = obtener_actividades(viaje_pendiente_confirmacion)
+                return render_template('propuesta_viaje.html', actividades=actividades, precio_total = obten_precio_total(viaje_pendiente_confirmacion), error_message='No se ha podido realizar el cobro')
         else:
             return render_template('iface.html')
     
+
+def emulate_planificador():
+    with open('example_planificador_response.ttl', 'r') as f:
+            print(f)
+            gr = Graph().parse(f, format='turtle')
+        
+            print(gr.serialize(format='turtle'))
+        
+            global viaje_pendiente_confirmacion
+            viaje_pendiente_confirmacion = Graph()
+            viaje_pendiente_confirmacion.bind('ECSDI', ECSDI)
+            viaje_pendiente_confirmacion += gr
+        
+            actividades = obtener_actividades(gr)
+
+            return render_template('propuesta_viaje.html', actividades=actividades, precio_total = obten_precio_total(gr))
+
 
 @app.route("/iface", methods=['GET', 'POST'])
 def browser_iface():
@@ -272,6 +372,8 @@ def browser_iface():
 
         if grado_ludica + grado_cultural + grado_festivo == 0:
             return render_template('iface.html', error_message='Se debe escoger un mínimo de algo en algun tipo de actividad')
+        
+
 
         gr = generar_peticion_de_viaje(
             usuario=usuario,
@@ -286,8 +388,16 @@ def browser_iface():
 
         transporte = obtener_info_transporte(gr)
         actividades = obtener_actividades(gr)
+        
+        global propuesta_viaje
+        propuesta_viaje = clean_graph(gr)
 
-        return render_template('propuesta_viaje.html', actividades=actividades, transporte=transporte)
+        global viaje_pendiente_confirmacion
+        viaje_pendiente_confirmacion = clean_graph(gr)
+
+        return render_template('propuesta_viaje.html', actividades=actividades, transporte=transporte, precio_total = obten_precio_total(viaje_pendiente_confirmacion))
+
+        
 
 
 @app.route("/stop")

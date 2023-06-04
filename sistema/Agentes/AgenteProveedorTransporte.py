@@ -40,8 +40,8 @@ from amadeus import Client, ResponseError
 
 __author__ = 'javier'
 
-AMADEUS_KEY = '8zfjCOSbBMc4MgaOkibZ4ydWXxR4mljG'
-AMADEUS_SECRET = 'yGTFfTOPGHNzIIZe'
+AMADEUS_KEY = 'EiHVAHxxhgGwlEPZTZ4flG42U1x5QvMI'
+AMADEUS_SECRET = 'n32zEDo4N2CAAtLB'
 
 amadeus = Client(
     client_id=AMADEUS_KEY,
@@ -122,8 +122,11 @@ AgenteDirectorio = Agent('AgenteDirectorio',
 # Global transporteDB triplestore
 transporteDB = Graph()
 
+transporte = ECSDI['avion']
+
 # Cola de comunicacion entre procesos
 cola1 = Queue()
+
 
 def register_message():
     """
@@ -139,6 +142,21 @@ def register_message():
 
     gr = registerAgent(AgenteProveedorTransporte, AgenteDirectorio, DSO.AgenteProveedorTransporte, getMessageCount())
     return gr
+
+
+def inicializaVueloNulo(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
+    flight_id = str(uuid.uuid4())
+    flight_price = 0
+
+    identificador = ECSDI[flight_id]
+
+    transporteDB.add((ECSDI[identificador], ECSDI.identificador, Literal(flight_id, datatype=XSD.string)))
+    transporteDB.add((ECSDI[identificador], ECSDI.precio, Literal(flight_price, datatype=XSD.float)))
+    transporteDB.add((ECSDI[identificador], ECSDI.viaje_transporte, transporte))
+    transporteDB.add((ECSDI[identificador], ECSDI.LugarDePartida, Literal(lugar_partida, datatype=XSD.string)))
+    transporteDB.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
+    transporteDB.add((ECSDI[identificador], ECSDI.DiaDePartida, Literal(dia_partida, datatype=XSD.string)))
+    transporteDB.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
 
 
 def obtener_transporte(sujeto, gm):
@@ -177,8 +195,6 @@ def fetch_queried_data(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
     global transporteDB
 
     logger.info(transporteDB.serialize(format='turtle'))
-
-    transporte = ECSDI['avion']
 
     flights_matching = f"""
              SELECT ?identificador ?precio
@@ -241,32 +257,35 @@ def remote_transporte_search(dia_partida, dia_retorno, lugar_partida, lugar_lleg
     logger.info('Lugar partida: ' + lugar_partida)
     logger.info('Lugar llegada: ' + lugar_partida)
 
-    response = amadeus.shopping.flight_offers_search.get(
-        originLocationCode=lugar_partida,
-        destinationLocationCode=lugar_llegada,
-        departureDate=dia_partida,
-        returnDate=dia_retorno,
-        adults=1,
-        currencyCode='EUR',
-        max=10)
+    if datetime.strptime(dia_partida, '%Y-%m-%d') < datetime.now():
+        inicializaVueloNulo(dia_partida, dia_retorno, lugar_partida, lugar_llegada)
+        logger.info("Fecha de partida anterior a la actual, se devolvera vuelo nulo")
 
-    logger.info("TOTAL NUMBER OF FLIGHTS: " + str(len(response.data)))
+    else:
+        response = amadeus.shopping.flight_offers_search.get(
+            originLocationCode=lugar_partida,
+            destinationLocationCode=lugar_llegada,
+            departureDate=dia_partida,
+            returnDate=dia_retorno,
+            adults=1,
+            currencyCode='EUR',
+            max=10)
 
-    transporte = ECSDI['avion']
+        logger.info("TOTAL NUMBER OF FLIGHTS: " + str(len(response.data)))
 
-    for f in response.data:
-        flight_id = str(uuid.uuid4())
-        flight_price = float(f['price']['grandTotal'])
+        for f in response.data:
+            flight_id = str(uuid.uuid4())
+            flight_price = float(f['price']['grandTotal'])
 
-        identificador = ECSDI[flight_id]
+            identificador = ECSDI[flight_id]
 
-        transporteDB.add((ECSDI[identificador], ECSDI.identificador, Literal(flight_id, datatype=XSD.string)))
-        transporteDB.add((ECSDI[identificador], ECSDI.precio, Literal(flight_price, datatype=XSD.float)))
-        transporteDB.add((ECSDI[identificador], ECSDI.viaje_transporte, transporte))
-        transporteDB.add((ECSDI[identificador], ECSDI.LugarDePartida, Literal(lugar_partida, datatype=XSD.string)))
-        transporteDB.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
-        transporteDB.add((ECSDI[identificador], ECSDI.DiaDePartida, Literal(dia_partida, datatype=XSD.string)))
-        transporteDB.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
+            transporteDB.add((ECSDI[identificador], ECSDI.identificador, Literal(flight_id, datatype=XSD.string)))
+            transporteDB.add((ECSDI[identificador], ECSDI.precio, Literal(flight_price, datatype=XSD.float)))
+            transporteDB.add((ECSDI[identificador], ECSDI.viaje_transporte, transporte))
+            transporteDB.add((ECSDI[identificador], ECSDI.LugarDePartida, Literal(lugar_partida, datatype=XSD.string)))
+            transporteDB.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
+            transporteDB.add((ECSDI[identificador], ECSDI.DiaDePartida, Literal(dia_partida, datatype=XSD.string)))
+            transporteDB.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
 
     logger.info(transporteDB.serialize(format='turtle'))
 
@@ -389,9 +408,6 @@ def agentbehavior1(cola):
 
 if __name__ == '__main__':
     # Ponemos en marcha los behaviors
-    ab1 = Process(target=agentbehavior1, args=(cola1,))
-    ab1.start()
-
     ab1 = Process(target=agentbehavior1, args=(cola1,))
     ab1.start()
 

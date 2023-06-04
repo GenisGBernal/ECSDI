@@ -14,9 +14,10 @@ from multiprocessing import Process, Queue
 import logging
 import argparse
 import multiprocessing
+import datetime
 
-from flask import Flask, request
-from rdflib import Graph, Namespace, Literal
+from flask import Flask, request, render_template
+from rdflib import Graph, Namespace, Literal, XSD
 from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
@@ -106,6 +107,10 @@ AgenteDirectorio = Agent('AgenteDirectorio',
 
 # Global viajesConfirmadosDB triplestore
 viajesConfirmadosDB = Graph()
+viajesConfirmadosDB.bind('ECSDI', ECSDI)
+
+# ESTO ES SOLO PARA PODER VER LOS CAMBIOS EN MODO DEV, EN LA VIDA REAL SE ENVIARIA UNA NOTIFICACION AL USUARIO
+registroCambiosViaje = []
 
 # Cola de comunicacion entre procesos
 cola1 = Queue()
@@ -127,13 +132,130 @@ def register_message():
     return gr
 
 
-@app.route("/iface", methods=['GET', 'POST'])
+@app.route("/finaliza-viajes-manual", methods=['GET'])
+def browser_acualiza_estado_manual():
+
+    if request.method == 'GET':
+
+        n_viajes_finalizados = actualizar_estado_viajes_finalizados()
+
+        return render_template('n_viajes_finalizados.html', n_viajes_finalizados=str(n_viajes_finalizados))
+
+
+@app.route("/iface", methods=['GET'])
 def browser_iface():
-    """
-    Permite la comunicacion con el agente via un navegador
-    via un formulario
-    """
-    return 'Nothing to see here'
+
+    if request.method == 'GET':
+
+        return render_template('ver_cambios_viaje.html', registro_cambios_viaje=registroCambiosViaje)
+    
+
+def obtener_actividad_cubierta():
+
+    agenteProveedorActividades = getAgentInfo(DSO.AgenteProveedorActividades, AgenteDirectorio, AgenteGestorDeViajes, getMessageCount())
+
+    gmess = Graph()
+    IAA = Namespace('IAActions')
+    gmess.bind('foaf', FOAF)
+    gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
+    sujeto = agn['PeticiónDeActividadCubierta-' + str(getMessageCount())]
+    gmess.add((sujeto, RDF.type, ECSDI.ActividadCubierta))
+
+    msg = build_message(gmess, perf=ACL.request,
+                        sender=AgenteGestorDeViajes.uri,
+                        receiver=agenteProveedorActividades.uri,
+                        msgcnt=getMessageCount(),
+                        content=sujeto)
+    
+    gr = send_message(msg, agenteProveedorActividades.address)
+
+    return clean_graph(gr)
+
+
+def obtener_usuario_actividades(sujeto_actividades_hoy):
+    sujeto_actividades = viajesConfirmadosDB.value(predicate=ECSDI.ActividadesOrdenadas, object=sujeto_actividades_hoy)
+    sujeto_viaje = viajesConfirmadosDB.value(predicate=ECSDI.ViajeActividades, object=sujeto_actividades)
+    usuario = viajesConfirmadosDB.value(subject=sujeto_viaje, predicate=ECSDI.Usuario).toPython()
+    return usuario
+
+
+def cambiar_actividad(sujeto_actividades_hoy, franja):
+
+    global viajesConfirmadosDB
+    fecha_hoy = datetime.date.today()
+
+    sujeto_actividad_franja = viajesConfirmadosDB.value(subject=sujeto_actividades_hoy, predicate=franja)
+    tipo_actividad_franja = viajesConfirmadosDB.value(subject=sujeto_actividad_franja, predicate=ECSDI.tipo_actividad)
+    
+    if tipo_actividad_franja != ECSDI.tipo_ludica:
+
+        logger.info("Cambiando actividad franja: " + franja + " - por actividad cubierta")
+
+        usuario = obtener_usuario_actividades(sujeto_actividades_hoy)
+        tipo_antigua_actividad = viajesConfirmadosDB.value(subject=sujeto_actividad_franja, predicate=ECSDI.tipo_actividad)
+        subtipo_antigua_actividad = viajesConfirmadosDB.value(subject=sujeto_actividad_franja, predicate=ECSDI.subtipo_actividad).toPython()
+        nombre_antigua_actividad = viajesConfirmadosDB.value(subject=sujeto_actividad_franja, predicate=ECSDI.nombre_actividad).toPython()
+
+        nueva_actividad = obtener_actividad_cubierta()
+        sujeto_nueva_actividad = nueva_actividad.value(predicate=RDF.type, object=ECSDI.actividad)
+       
+        tipo_nueva_actividad = nueva_actividad.value(subject=sujeto_nueva_actividad, predicate=ECSDI.tipo_actividad)
+        subtipo_nueva_actividad = nueva_actividad.value(subject=sujeto_nueva_actividad, predicate=ECSDI.subtipo_actividad).toPython()
+        nombre_nueva_actividad = nueva_actividad.value(subject=sujeto_nueva_actividad, predicate=ECSDI.nombre_actividad).toPython()
+
+        viajesConfirmadosDB.remove((sujeto_actividades_hoy, franja, None))
+        viajesConfirmadosDB.remove((sujeto_actividad_franja, None, None))
+
+        viajesConfirmadosDB.add((sujeto_actividades_hoy, franja, sujeto_nueva_actividad))
+        viajesConfirmadosDB += nueva_actividad
+
+        registro_cambio_actividad = {
+            "dia": str(fecha_hoy),
+            "usuario": usuario,
+            "franja": franja,
+            "tipo_antigua_actividad": tipo_antigua_actividad,
+            "subtipo_antigua_actividad": subtipo_antigua_actividad,
+            "nombre_antigua_actividad": nombre_antigua_actividad,
+            "tipo_nueva_actividad": tipo_nueva_actividad,
+            "subtipo_nueva_actividad": subtipo_nueva_actividad,
+            "nombre_nueva_actividad": nombre_nueva_actividad
+        }
+        registroCambiosViaje.append(registro_cambio_actividad)
+
+
+
+def cambiar_actividades_segun_lluvia(sujeto, gm):
+
+    hay_lluvia_matina = gm.value(subject=sujeto, predicate=ECSDI.hay_lluvia_matina).toPython()
+    hay_lluvia_tarde = gm.value(subject=sujeto, predicate=ECSDI.hay_lluvia_tarde).toPython()
+    hay_lluvia_noche = gm.value(subject=sujeto, predicate=ECSDI.hay_lluvia_noche).toPython()
+
+    logger.info("Hay lluvia por la mañana: " + str(hay_lluvia_matina))
+    logger.info("Hay lluvia por la tarde: " + str(hay_lluvia_tarde))
+    logger.info("Hay lluvia por la noche: " + str(hay_lluvia_noche))
+
+    fecha_hoy = datetime.date.today()
+
+    if hay_lluvia_matina or hay_lluvia_tarde or hay_lluvia_noche:
+
+        for sujeto_actividades_hoy,_,_ in viajesConfirmadosDB.triples((None, ECSDI.dia, Literal(fecha_hoy, datatype=XSD.string))):
+
+            if hay_lluvia_matina:
+                cambiar_actividad(sujeto_actividades_hoy, ECSDI.actividad_manana)
+
+            if hay_lluvia_tarde:
+                cambiar_actividad(sujeto_actividades_hoy, ECSDI.actividad_tarde)
+
+            if hay_lluvia_noche:
+                cambiar_actividad(sujeto_actividades_hoy, ECSDI.actividad_noche)
+
+    print(viajesConfirmadosDB.serialize(format='turtle'))
+
+    return build_message(Graph(),
+        ACL['inform'],
+        sender=AgenteGestorDeViajes.uri,
+        msgcnt=getMessageCount())
 
 
 @app.route("/stop")
@@ -148,16 +270,20 @@ def stop():
     return "Parando Servidor"
 
 
-def registra_viaje_confirmado(sujeto, gm):
+def registra_viaje_confirmado(sujeto_viaje, gm):
 
     global viajesConfirmadosDB
 
+    logger.info("Registrando viaje confirmado")
+
     gm_cleaned = clean_graph(gm)
+    viajesConfirmadosDB += gm_cleaned
 
-    for sujeto, predicado, objeto in gm_cleaned.triples(None, None, None):
-        viajesConfirmadosDB.add(sujeto, predicado, objeto)
+    return build_message(Graph(),
+        ACL['inform'],
+        sender=AgenteGestorDeViajes.uri,
+        msgcnt=getMessageCount())
     
-
 
 @app.route("/comm")
 def comunicacion():
@@ -203,9 +329,14 @@ def comunicacion():
                 sujeto = msgdic['content']
                 accion = gm.value(subject=sujeto, predicate=RDF.type)
 
-                if accion == ECSDI.ComunicaViajeConfirmado:
+                if accion == ECSDI.ViajePendienteDeConfirmacion:
                     logger.info('Peticion de registrar viaje confirmado')
                     gr = registra_viaje_confirmado(sujeto, gm)
+                
+                elif accion == ECSDI.prevision:
+                    logger.info('Recibida prediccion meterologica')
+                    gr = cambiar_actividades_segun_lluvia(sujeto, gm)       
+                    
 
     logger.info('Respondemos a la peticion')
 
@@ -222,13 +353,60 @@ def tidyup():
 
 
 def actualizar_estado_viajes_finalizados():
-    print("hola")
+
+    global viajesConfirmadosDB
+
+    logger.info("Actualizando estado de viajes finalizados")
+
+    fecha_hoy = datetime.date.today()
+
+    sujetos_viajes_finalizados = list(viajesConfirmadosDB.query("""
+            SELECT DISTINCT ?sujeto
+            WHERE {
+                ?sujeto ECSDI:DiaDeRetorno ?tipo .
+                FILTER (?tipo < ?var)
+            }
+        """, 
+        initNs = {'ECSDI': ECSDI},
+        initBindings={'var': Literal(fecha_hoy, datatype=XSD.string)}
+    ))
+
+    if len(sujetos_viajes_finalizados) > 0:
+        # TODO: HACER CUANDO AGENTE LISTO
+        # agenteRecomendadorYSatisfaccion = getAgentInfo(DSO.AgenteRecomendadorYSatisfaccion, AgenteDirectorio, AgenteGestorDeViajes, getMessageCount())
+
+        gmess = Graph()
+        IAA = Namespace('IAActions')
+        gmess.bind('foaf', FOAF)
+        gmess.bind('iaa', IAA)
+        gmess.bind('ECSDI', ECSDI)
+
+        for sujeto_viaje_finalizado in sujetos_viajes_finalizados:
+
+            for sujeto, predicado, objeto in viajesConfirmadosDB.triples((sujeto_viaje_finalizado, None, None)):
+                if (predicado == RDF.type):
+                    gmess.add((sujeto, RDF.type, ECSDI.ViajeFinalizado))
+                else:
+                    gmess.add((sujeto, predicado, objeto))
+            
+            viajesConfirmadosDB.remove((sujeto_viaje_finalizado, None, None))
+
+        # msg = build_message(gmess, perf=ACL.request,
+        #             sender=AgenteGestorDeViajes.uri,
+        #             receiver=agenteRecomendadorYSatisfaccion.uri,
+        #             msgcnt=getMessageCount(),
+        #             content=sujeto)
+        # gr = send_message(msg, agenteRecomendadorYSatisfaccion.address)
+
+    logger.info("Viajes actualizados: " + str(len(sujetos_viajes_finalizados)))
+
+    return len(sujetos_viajes_finalizados)
 
 
 async def temporizador():
     while True:
-        await asyncio.sleep(5)
         actualizar_estado_viajes_finalizados()
+        await asyncio.sleep(60*60*24)
 
 
 def agentbehavior1(cola):

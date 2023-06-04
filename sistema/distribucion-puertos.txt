@@ -8,4 +8,5 @@ AgenteProveedorTransporte = 9006
 AgenteCobrador = 9007
 AgenteBanco = 9008
 AgenteGestorDeViajes = 9009
-AgenteRecomendadorYSatisfaccion = 9010
+AgenteProveedorPrevisionMeteorologica = 9010
+AgenteRecomendadorYSatisfaccion = 9011
