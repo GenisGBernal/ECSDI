@@ -392,9 +392,6 @@ if __name__ == '__main__':
     ab1 = Process(target=agentbehavior1, args=(cola1,))
     ab1.start()
 
-    ab1 = Process(target=agentbehavior1, args=(cola1,))
-    ab1.start()
-
     # Ponemos en marcha el servidor
     app.run(host=hostname, port=port)
 
