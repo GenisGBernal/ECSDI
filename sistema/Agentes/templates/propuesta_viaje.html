@@ -11,7 +11,20 @@
 
 <h3>Propuesta de viaje:</h3>
 <ul>
-    {% for dia in actividades %}
+    <li> Transporte: </li>
+    <ul>
+        {% for partes in transporte %}
+            <li> {{ partes.nombre }} </li>
+            <ul>
+                {% for parte in partes.info %}
+                    <li> {{ parte }} </li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </ul>
+    <li> Actividades: </li>
+    <ul>
+        {% for dia in actividades %}
     <li>Dia: {{dia.dia}}</li>
     <ul>
         {% for actividad in dia.actividades %}
@@ -23,6 +36,7 @@
         {% endfor %}
     </ul>
     {% endfor %}
+    </ul>
 </ul>
 
 <h4>Aceptar viaje</t4>

@@ -228,7 +228,7 @@ def process_payment(gm, content):
 
     le_viaje = None
     juice_trip = clean_graph(gm)
-    for a, _, _ in juice_trip.triples((None, RDF.type , ECSDI.PeticionDeViaje)):
+    for a, _, _ in juice_trip.triples((None, RDF.type , ECSDI.ViajePendienteDeConfirmacion)):
         le_viaje = a
 
     if le_viaje is None: return build_message(Graph(), ACL['not-understood'], sender=AgenteCobrador.uri, msgcnt=getMessageCount())

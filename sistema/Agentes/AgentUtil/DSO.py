@@ -31,7 +31,6 @@ DSO =  ClosedNamespace(
         'Uri',
         'Name',
         'Address',
-        
         # Named Individuals
         'FlightsAgent',
         'HotelsAgent',
@@ -48,5 +47,7 @@ DSO =  ClosedNamespace(
         'AgenteProveedorTransporte',
         'AgenteCobrador',
         'AgenteBanco',
+        'AgenteGestorDeViajes',
+        'AgenteProveedorPrevisionMeteorologica'
     ]
 )

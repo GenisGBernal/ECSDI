@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+
+{% if success_message %}
+    <p style="color: green;">{{ success_message }}</p>
+{% endif %}
+
+<t1>Forzar lluvia hoy en:</t1>
+
+<form method="post" action="/iface">
+    <p></p>
+    <label for="forzar_lluvia_manana">Forzar lluvia por la mañana:</label>
+        <input type="radio" name="forzar_lluvia_manana" value=1 required> Sí
+        <input type="radio" name="forzar_lluvia_manana" value=0> No
+    <p></p>
+    <label for="forzar_lluvia_tarde">Forzar lluvia por la tarde:</label>
+        <input type="radio" name="forzar_lluvia_tarde" value=1 required> Sí
+        <input type="radio" name="forzar_lluvia_tarde" value=0> No
+    <p></p>
+
+    <label for="forzar_lluvia_noche">Forzar lluvia por la noche:</label>
+        <input type="radio" name="forzar_lluvia_noche" value=1 required> Sí
+        <input type="radio" name="forzar_lluvia_noche" value=0> No
+
+    <p>
+        <button type="submit">Send</button>
+    </p>
+</form>
+
+</body>
+</html>

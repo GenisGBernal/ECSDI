@@ -12,6 +12,8 @@ Created on 09/02/2014
 @author: javier
 """
 
+import datetime
+from datetime import datetime as time_converter
 from multiprocessing import Process
 import logging
 import argparse
@@ -23,7 +25,7 @@ from rdflib.namespace import FOAF, RDF
 from AgentUtil.ACL import ACL
 from AgentUtil.DSO import DSO
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, clean_graph, send_message, getAgentInfo, get_message_properties
+from AgentUtil.ACLMessages import build_message, send_message, getAgentInfo, get_message_properties, clean_graph
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.Util import gethostname
@@ -106,6 +108,14 @@ DirectoryAgent = Agent('DirectoryAgent',
 # Global dsgraph triplestore
 viaje_pendiente_confirmacion = Graph()
 
+propuesta_viaje = None
+
+def string_a_fecha(fecha_en_string):
+    formato = "%Y-%m-%d"
+
+    return time_converter.strptime(fecha_en_string, formato).date()
+
+
 def obtener_info_actividad(sujeto, g, franja):
     nombre = g.value(subject=sujeto, predicate=ECSDI.nombre_actividad).toPython()
     tipo_actividad = g.value(subject=sujeto, predicate=ECSDI.tipo_actividad)
@@ -114,7 +124,7 @@ def obtener_info_actividad(sujeto, g, franja):
     if tipo_actividad == ECSDI.tipo_ludica:
         tipo_actividad = 'Lúdica'
     elif tipo_actividad == ECSDI.tipo_cultural:
-        tipo_actividad = 'Cultural'    
+        tipo_actividad = 'Cultural'
     else:
         tipo_actividad = 'Festiva'
 
@@ -124,6 +134,51 @@ def obtener_info_actividad(sujeto, g, franja):
         'tipo_actividad': tipo_actividad,
         'subtipo_actividad': subtipo_actividad
     }
+
+def obtener_info_transporte(grafo_viaje):
+    transporte = ECSDI['avion']
+
+    info_relevante_vuelo = []
+
+    query = f"""
+        SELECT ?identificador ?precio ?dia_partida ?dia_retorno ?lugar_partida ?lugar_llegada
+        WHERE {{
+            ?billete ECSDI:viaje_transporte ?viaje_transporte_param ;
+                     ECSDI:identificador ?identificador ;
+                     ECSDI:precio ?precio ;
+                     ECSDI:DiaDePartida ?dia_partida ;
+                     ECSDI:DiaDeRetorno ?dia_retorno ;
+                     ECSDI:LugarDePartida ?lugar_partida ;
+                     ECSDI:LugarDeLlegada ?lugar_llegada .
+                FILTER (?viaje_transporte_param = <{transporte}>)
+            }}
+            LIMIT 1
+            """
+    logger.info(query)
+
+    resultsQuery = grafo_viaje.query(
+        query,
+        initNs={'ECSDI': ECSDI})
+
+    info_general = {'nombre': 'Informacion general', 'info': []}
+    info_viaje_ida = {'nombre': 'Informacion viaje ida', 'info': []}
+    info_viaje_vuelta = {'nombre': 'Informacion viaje vuelta', 'info': []}
+
+    for result in resultsQuery:
+        info_general['info'] = ['Identificador : ' + str(result.identificador.toPython()),
+                        'Precio total: ' + str(result.precio.toPython()) + '€']
+
+        info_viaje_ida['info'] = ['Fecha vuelo : ' + str(result.dia_partida.toPython()),
+                          'Ciudad salida : ' + str(result.lugar_partida.toPython()),
+                          'Ciudad llegada: ' + str(result.lugar_llegada.toPython())]
+
+        info_viaje_vuelta['info'] = ['Fecha vuelo : ' + str(result.dia_retorno.toPython()),
+                             'Ciudad salida : ' + str(result.lugar_llegada.toPython()),
+                             'Ciudad llegada: ' + str(result.lugar_partida.toPython())]
+
+    info_vuelo = [info_general, info_viaje_ida, info_viaje_vuelta]
+
+    return info_vuelo
 
 def obtener_actividades(grafo_viaje):
 
@@ -150,14 +205,14 @@ def obtener_actividades(grafo_viaje):
         }
         lista_actividades_completa.append(actividad_un_dia)
 
-    lista_actividades_completa = sorted(lista_actividades_completa, key=lambda x: x['dia'])
+    lista_actividades_completa = sorted(lista_actividades_completa, key=lambda x: string_a_fecha(x['dia']))
 
     return lista_actividades_completa
 
 
 def obten_precio_total(grafo_viaje):
 
-    sujeto = grafo_viaje.value(predicate=RDF.type, object=ECSDI.PeticionDeViaje)
+    sujeto = grafo_viaje.value(predicate=RDF.type, object=ECSDI.ViajePendienteDeConfirmacion)
     precio_total = grafo_viaje.value(subject=sujeto, predicate=ECSDI.precio_total).toPython()
 
     return precio_total
@@ -173,6 +228,7 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, g
     IAA = Namespace('IAActions')
     gmess.bind('foaf', FOAF)
     gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
     sujeto = agn['PeticiónDeViaje-' + str(getMessageCount())]
     gmess.add((sujeto, RDF.type, ECSDI.PeticionDeViaje))
     gmess.add((sujeto, ECSDI.Usuario, Literal(usuario, datatype=XSD.string)))
@@ -190,7 +246,7 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, g
                         receiver=agentePlanificador.uri,
                         msgcnt=getMessageCount(),
                         content=sujeto)
-    
+
     log.info("Petición de viaje al AgentePlanificador")
     gr = send_message(msg, agentePlanificador.address)
     gr = clean_graph(gr)
@@ -220,7 +276,7 @@ def peticion_de_cobro(tarjeta_id):
     gmess.bind('ECSDI', ECSDI)
     gmess.add((sujeto, RDF.type, ECSDI.QuieroCobrarViaje))
 
-    le_viaje = gmess.value(predicate=RDF.type, object=ECSDI.PeticionDeViaje)
+    le_viaje = gmess.value(predicate=RDF.type, object=ECSDI.ViajePendienteDeConfirmacion)
 
     if le_viaje is None:
         return False
@@ -257,7 +313,17 @@ def recibir_respuesta_propuesta_viaje():
             tarjeta_id = request.form['tarjeta']
             success = peticion_de_cobro(tarjeta_id)
             
-            if success: return render_template('viaje_confirmado.html')
+            if success: 
+                agenteGestorDeViajes = getAgentInfo(DSO.AgenteGestorDeViajes, DirectoryAgent, AgenteContratador, getMessageCount())
+
+                sujeto = propuesta_viaje.value(predicate=RDF.type, object=ECSDI.ViajePendienteDeConfirmacion)
+                msg = build_message(propuesta_viaje, perf=ACL.request,
+                            sender=AgenteContratador.uri,
+                            receiver=agenteGestorDeViajes.uri,
+                            msgcnt=getMessageCount(),
+                            content=sujeto)
+                gr = send_message(msg, agenteGestorDeViajes.address)
+                return render_template('viaje_confirmado.html')
             else: 
                 global viaje_pendiente_confirmacion
                 actividades = obtener_actividades(viaje_pendiente_confirmacion)
@@ -303,30 +369,33 @@ def browser_iface():
 
         if diaRetorno < diaPartida:
             return render_template('iface.html', error_message='La fecha de retorno no puede ser anterior a la de salida')
-        
+
         if grado_ludica + grado_cultural + grado_festivo == 0:
             return render_template('iface.html', error_message='Se debe escoger un mínimo de algo en algun tipo de actividad')
         
-        # THIS LINE MUST BE REMOVED, IT IS JUST TO AVOID TESTING PLANIFICADOR
-        return emulate_planificador()
+
 
         gr = generar_peticion_de_viaje(
-            usuario=usuario, 
-            lugarDePartida=lugarDePartida, 
-            diaPartida=diaPartida, 
-            diaRetorno=diaRetorno, 
-            grado_ludica=grado_ludica, 
-            grado_cultural=grado_cultural, 
+            usuario=usuario,
+            lugarDePartida=lugarDePartida,
+            diaPartida=diaPartida,
+            diaRetorno=diaRetorno,
+            grado_ludica=grado_ludica,
+            grado_cultural=grado_cultural,
             grado_festivo=grado_festivo)
-
 
         print(gr.serialize(format='turtle'))
 
-        
-        
+        transporte = obtener_info_transporte(gr)
         actividades = obtener_actividades(gr)
+        
+        global propuesta_viaje
+        propuesta_viaje = clean_graph(gr)
 
-        return render_template('propuesta_viaje.html', actividades=actividades)
+        global viaje_pendiente_confirmacion
+        viaje_pendiente_confirmacion = clean_graph(gr)
+
+        return render_template('propuesta_viaje.html', actividades=actividades, transporte=transporte, precio_total = obten_precio_total(viaje_pendiente_confirmacion))
 
         
 
