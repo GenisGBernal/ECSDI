@@ -102,6 +102,13 @@ if not args.verbose:
 # Configuration constants and variables
 agn = Namespace("http://www.agentes.org#")
 
+# Payments storage
+payments = Graph()
+IAA = Namespace('IAActions')
+payments.bind('foaf', FOAF)
+payments.bind('iaa', IAA)
+payments.bind('ECSDI', ECSDI)
+
 # Contador de mensajes
 mss_cnt = 0
 
@@ -184,6 +191,14 @@ def se_accepta(viaje_sujeto, viaje_content, price):
     gmess.add((sujeto, RDF.type, ECSDI.TomaCobroAcceptado))
     gmess.add((sujeto, ECSDI.tiene_viaje, viaje_sujeto))
     gmess.add((sujeto, ECSDI.precio_total, Literal(price, datatype=XSD.float)))
+
+    global payments
+    payments += viaje_content
+    sujeto = agn['ViajeConfirmado-' + str(getMessageCount())]
+    gmess.add((sujeto, RDF.type, ECSDI.ViajeConfirmado))
+    gmess.add((sujeto, ECSDI.tiene_viaje, viaje_sujeto))
+    gmess.add((sujeto, ECSDI.precio_total, Literal(price, datatype=XSD.float)))
+
     return gmess
 
 def se_rechaza(viaje_sujeto, viaje_content, price):
