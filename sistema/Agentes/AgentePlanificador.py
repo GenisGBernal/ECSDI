@@ -185,6 +185,7 @@ def obtener_actividades(p_salida, fecha_llegada, fecha_salida, grado_ludica, gra
     IAA = Namespace('IAActions')
     gmess.bind('foaf', FOAF)
     gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
     sujeto = agn['PeticiónIntervaloDeActividades-' + str(getMessageCount())]
     gmess.add((sujeto, RDF.type, ECSDI.IntervaloDeActividades))
     gmess.add((sujeto, ECSDI.DiaDePartida, Literal(fecha_llegada, datatype=XSD.string)))
@@ -208,6 +209,7 @@ def obtener_actividades(p_salida, fecha_llegada, fecha_salida, grado_ludica, gra
 
 def planificar_viaje(sujeto, gm):
 
+    usuario = gm.value(subject=sujeto, predicate=ECSDI.Usuario).toPython()
     fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida).toPython()
     fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno).toPython()
     grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica).toPython()
@@ -252,8 +254,15 @@ def planificar_viaje(sujeto, gm):
     IAA = Namespace('IAActions')
     gmess.bind('foaf', FOAF)
     gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
     sujeto = agn['planificador/PlanificacionDeViaje-' + str(getMessageCount())]
+    sujeto_actividades = g_actividades.value(predicate=RDF.type, object=ECSDI.viaje_actividades)
     gmess.add((sujeto, RDF.type, ECSDI.ViajePendienteDeConfirmacion))
+    gmess.add((sujeto, ECSDI.Usuario, Literal(usuario, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.DiaDePartida, Literal(fecha_llegada, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(fecha_salida, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.ViajeActividades, sujeto_actividades))
+
 
     gmess += g_actividades
     gmess += g_hospedaje

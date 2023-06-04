@@ -12,6 +12,8 @@ Created on 09/02/2014
 @author: javier
 """
 
+import datetime
+from datetime import datetime as time_converter
 from multiprocessing import Process
 import logging
 import argparse
@@ -23,7 +25,7 @@ from rdflib.namespace import FOAF, RDF
 from AgentUtil.ACL import ACL
 from AgentUtil.DSO import DSO
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, send_message, getAgentInfo, get_message_properties
+from AgentUtil.ACLMessages import build_message, send_message, getAgentInfo, get_message_properties, clean_graph
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.Util import gethostname
@@ -106,6 +108,14 @@ DirectoryAgent = Agent('DirectoryAgent',
 # Global dsgraph triplestore
 dsgraph = Graph()
 
+propuesta_viaje = None
+
+def string_a_fecha(fecha_en_string):
+    formato = "%Y-%m-%d"
+
+    return time_converter.strptime(fecha_en_string, formato).date()
+
+
 def obtener_info_actividad(sujeto, g, franja):
     nombre = g.value(subject=sujeto, predicate=ECSDI.nombre_actividad).toPython()
     tipo_actividad = g.value(subject=sujeto, predicate=ECSDI.tipo_actividad)
@@ -150,7 +160,7 @@ def obtener_actividades(grafo_viaje):
         }
         lista_actividades_completa.append(actividad_un_dia)
 
-    lista_actividades_completa = sorted(lista_actividades_completa, key=lambda x: x['dia'])
+    lista_actividades_completa = sorted(lista_actividades_completa, key=lambda x: string_a_fecha(x['dia']))
 
     return lista_actividades_completa
 
@@ -165,6 +175,7 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, g
     IAA = Namespace('IAActions')
     gmess.bind('foaf', FOAF)
     gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
     sujeto = agn['PeticiónDeViaje-' + str(getMessageCount())]
     gmess.add((sujeto, RDF.type, ECSDI.PeticionDeViaje))
     gmess.add((sujeto, ECSDI.Usuario, Literal(usuario, datatype=XSD.string)))
@@ -198,6 +209,16 @@ def recibir_respuesta_propuesta_viaje():
             # TODO: Llamada a cobro
 
             # TODO: Llamada viajes confirmados
+
+            agenteGestorDeViajes = getAgentInfo(DSO.AgenteGestorDeViajes, DirectoryAgent, AgenteContratador, getMessageCount())
+
+            sujeto = propuesta_viaje.value(predicate=RDF.type, object=ECSDI.ViajePendienteDeConfirmacion)
+            msg = build_message(propuesta_viaje, perf=ACL.request,
+                        sender=AgenteContratador.uri,
+                        receiver=agenteGestorDeViajes.uri,
+                        msgcnt=getMessageCount(),
+                        content=sujeto)
+            gr = send_message(msg, agenteGestorDeViajes.address)
 
             return render_template('viaje_confirmado.html')
         else:
@@ -241,6 +262,9 @@ def browser_iface():
         
         
         actividades = obtener_actividades(gr)
+
+        global propuesta_viaje
+        propuesta_viaje = clean_graph(gr)
 
         return render_template('propuesta_viaje.html', actividades=actividades)
 

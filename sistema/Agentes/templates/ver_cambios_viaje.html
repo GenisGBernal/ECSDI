@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+
+<h3>Registro cambios de viaje:</h3>
+<ul>
+    {% for cambio_actividad in registro_cambios_viaje %}
+        <li>Usuario: {{ cambio_actividad.usuario }}, Dia: {{ cambio_actividad.dia }}, Franja: {{ cambio_actividad.franja }}</li>
+        <ul>
+            <li>Actividad antigua: {{ cambio_actividad.nombre_antigua_actividad }}</li>
+            <li>Tipo actividad antigua: {{ cambio_actividad.tipo_antigua_actividad }}</li>
+            <li>Subtipo actividad antigua: {{ cambio_actividad.subtipo_antigua_actividad }}</li>
+            --------------
+            <li>Actividad nueva: {{ cambio_actividad.nombre_nueva_actividad }}</li>
+            <li>Tipo actividad nueva: {{ cambio_actividad.tipo_nueva_actividad }}</li>
+            <li>Subtipo actividad nueva: {{ cambio_actividad.subtipo_nueva_actividad }}</li>
+        </ul>
+        <p></p>
+    {% endfor %}
+</ul>
+
+</body>
+</html>
