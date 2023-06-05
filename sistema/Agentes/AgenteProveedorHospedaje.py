@@ -252,6 +252,7 @@ def comunicacion():
                 gr.add((uri_mensaje, ECSDI.viaje_hospedaje, hotel_uri))
 
                 logger.info("Hospedaje encontrado: " + hotel_name)
+                break
             return build_message(gr,
                                  ACL.inform,
                                  sender=AgenteProveedorHospedaje.uri,

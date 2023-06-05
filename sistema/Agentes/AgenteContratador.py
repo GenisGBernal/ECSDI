@@ -217,6 +217,15 @@ def obten_precio_total(grafo_viaje):
 
     return precio_total
 
+def obtener_hotel(grafo_viaje):
+    hotel = grafo_viaje.value(predicate=RDF.type, object=ECSDI.Hospedaje)
+    nombre_hotel = grafo_viaje.value(subject=hotel, predicate=ECSDI.identificador).toPython()
+    precio_hotel = grafo_viaje.value(subject=hotel, predicate=ECSDI.precio).toPython()
+    return {
+        'nombre': nombre_hotel,
+        'precio': precio_hotel
+    }
+
 
 def generar_peticion_de_viaje(usuario, lugarDePartida, destinacion, diaPartida, diaRetorno, grado_ludica, grado_cultural, grado_festivo):
 
@@ -325,7 +334,8 @@ def recibir_respuesta_propuesta_viaje():
             else: 
                 global viaje_pendiente_confirmacion
                 actividades = obtener_actividades(viaje_pendiente_confirmacion)
-                return render_template('propuesta_viaje.html', actividades=actividades, precio_total = obten_precio_total(viaje_pendiente_confirmacion), error_message='No se ha podido realizar el cobro')
+                hotel = obtener_hotel(viaje_pendiente_confirmacion)
+                return render_template('propuesta_viaje.html', actividades=actividades, hospedaje=hotel, precio_total = obten_precio_total(viaje_pendiente_confirmacion), error_message='No se ha podido realizar el cobro')
         else:
             return render_template('iface.html')
     
@@ -343,8 +353,9 @@ def emulate_planificador():
             viaje_pendiente_confirmacion += gr
         
             actividades = obtener_actividades(gr)
+            hotel = obtener_hotel(gr)
 
-            return render_template('propuesta_viaje.html', actividades=actividades, precio_total = obten_precio_total(gr))
+            return render_template('propuesta_viaje.html', actividades=actividades, hospedaje=hotel, precio_total = obten_precio_total(gr))
 
 
 @app.route("/iface", methods=['GET', 'POST'])
@@ -398,7 +409,9 @@ def browser_iface():
         global viaje_pendiente_confirmacion
         viaje_pendiente_confirmacion = clean_graph(gr)
 
-        return render_template('propuesta_viaje.html', actividades=actividades, transporte=transporte, precio_total = obten_precio_total(viaje_pendiente_confirmacion))
+        hotel = obtener_hotel(gr)
+
+        return render_template('propuesta_viaje.html', actividades=actividades, transporte=transporte, hospedaje=hotel, precio_total = obten_precio_total(viaje_pendiente_confirmacion))
 
         
 
