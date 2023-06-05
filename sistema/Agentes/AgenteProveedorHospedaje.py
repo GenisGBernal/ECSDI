@@ -135,6 +135,7 @@ def register_message():
 def remote_hospedaje_search(cityCode):
     global hospedajeDB
 
+    cityCode = str(cityCode)[-3:]
     # Hotels query
     #cityCode = 'LON'
     response = amadeus.reference_data.locations.hotels.by_city.get(cityCode=cityCode)
@@ -214,7 +215,7 @@ def comunicacion():
         # This will be changed to a conditional
         if len(city_search) < 5:
             try:
-                remote_hospedaje_search('LON')
+                remote_hospedaje_search(city)
             except ResponseError as error:
                 print(error)
                 return build_message(Graph(),

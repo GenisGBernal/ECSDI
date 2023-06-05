@@ -160,6 +160,9 @@ def obtener_hospedaje(p_salida, primerDia, últimoDia, cityCode):
     if response_subject is not None:
         response.remove((response_subject, None, None))
 
+    print("hola")
+    print(response.serialize(format="turtle"))
+
     # Send response to main thread
     p_salida.send(response.serialize(format='xml'))
     p_salida.close()
@@ -340,8 +343,11 @@ def planificar_viaje(sujeto, gm):
     gmess += g_hospedaje
     gmess += g_transporte
 
+    print("holaaa")
+    print(g_transporte.serialize(format="turtle"))
+
     sujeto_hotel = g_hospedaje.value(predicate=RDF.type, object=ECSDI.Hospedaje)
-    transporte_id = g_transporte.value(predicate=ECSDI.viaje_transporte, object=ECSDI['avion']).toPython()
+    transporte_id = g_transporte.value(predicate=ECSDI.viaje_transporte, object=ECSDI.avion)
     precio_transporte = g_transporte.value(subject=transporte_id, predicate=ECSDI.precio).toPython()
     precio_hotel = g_hospedaje.value(subject=sujeto_hotel, predicate=ECSDI.precio).toPython()
     

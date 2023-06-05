@@ -143,7 +143,7 @@ def register_message():
 
 def generadorVuelosEnElPasado(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
     flight_id = str(uuid.uuid4())
-    flight_price = 0
+    flight_price = 100
 
     identificador = ECSDI[flight_id]
 
