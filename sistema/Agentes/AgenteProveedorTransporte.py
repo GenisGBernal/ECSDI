@@ -141,7 +141,7 @@ def register_message():
     return gr
 
 
-def inicializaVueloNulo(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
+def generadorVuelosEnElPasado(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
     flight_id = str(uuid.uuid4())
     flight_price = 0
 
@@ -255,7 +255,7 @@ def remote_transporte_search(dia_partida, dia_retorno, lugar_partida, lugar_lleg
     logger.info('Lugar llegada: ' + lugar_partida)
 
     if datetime.strptime(dia_partida, '%Y-%m-%d') < datetime.now():
-        inicializaVueloNulo(dia_partida, dia_retorno, lugar_partida, lugar_llegada)
+        generadorVuelosEnElPasado(dia_partida, dia_retorno, lugar_partida, lugar_llegada)
         logger.info("Fecha de partida anterior a la actual, se devolvera vuelo nulo")
 
     else:

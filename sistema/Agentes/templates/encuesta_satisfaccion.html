@@ -20,6 +20,7 @@
     <input type="hidden" name="grado_ludica_viaje" value={{ viaje_no_valorado_usuario['Grado ludica']}}>
     <input type="hidden" name="grado_cultural_viaje" value={{ viaje_no_valorado_usuario['Grado cultural']}}>
     <input type="hidden" name="grado_festivo_viaje" value={{ viaje_no_valorado_usuario['Grado festivo']}}>
+    <input type="hidden" name="usuario" value={{ usuario }}>
     <p><label for="grado_ludica">Cantidad de Ludico:</label></p>
         <input type="radio" name="grado_ludica_opinion" value=1 required> Me han gustado mucho, quiero mas la proxima vez<br>
         <input type="radio" name="grado_ludica_opinion" value=0> La cantidad era adecuada<br>
@@ -37,6 +38,11 @@
 
     <p>
         <button type="submit">Send</button>
+    </p>
+</form>
+<form method="get" action="/iface">
+    <p>
+        <button type="submit">No quiero valorar este viaje</button>
     </p>
 </form>
 </body>

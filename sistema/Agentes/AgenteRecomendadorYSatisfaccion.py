@@ -130,38 +130,9 @@ def register_message():
                        getMessageCount())
     return gr
 
-
-# def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, grado_ludica, grado_cultural,
-#                               grado_festivo):
-#     agentePlanificador = getAgentInfo(DSO.AgentePlanificador, DirectoryAgent, AgenteContratador, getMessageCount())
-#
-#     lugarDeLlegada = 'BCN'
-#
-#     gmess = Graph()
-#     IAA = Namespace('IAActions')
-#     gmess.bind('foaf', FOAF)
-#     gmess.bind('iaa', IAA)
-#     sujeto = agn['PeticiónDeViaje-' + str(getMessageCount())]
-#     gmess.add((sujeto, RDF.type, ECSDI.PeticionDeViaje))
-#     gmess.add((sujeto, ECSDI.Usuario, Literal(usuario, datatype=XSD.string)))
-#     gmess.add((sujeto, ECSDI.LugarDePartida, Literal(lugarDePartida, datatype=XSD.string)))
-#     gmess.add((sujeto, ECSDI.LugarDeLlegada, Literal(lugarDeLlegada, datatype=XSD.string)))
-#     gmess.add((sujeto, ECSDI.DiaDePartida, Literal(diaPartida, datatype=XSD.string)))
-#     gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(diaRetorno, datatype=XSD.string)))
-#     gmess.add((sujeto, ECSDI.grado_ludica, Literal(grado_ludica, datatype=XSD.integer)))
-#     gmess.add((sujeto, ECSDI.grado_cultural, Literal(grado_cultural, datatype=XSD.integer)))
-#     gmess.add((sujeto, ECSDI.grado_festiva, Literal(grado_festivo, datatype=XSD.integer)))
-#
-#     msg = build_message(gmess, perf=ACL.request,
-#                         sender=AgenteContratador.uri,
-#                         receiver=agentePlanificador.uri,
-#                         msgcnt=getMessageCount(),
-#                         content=sujeto)
-#
-#     log.info("Petición de viaje al AgentePlanificador")
-#     gr = send_message(msg, agentePlanificador.address)
-#     log.info("Respuesta recibida")
-#     return gr
+def media(a, b):
+    media = (a + b) / 2
+    return round(media)
 
 def guardarViajesFinalizados(sujeto, gm):
     for s, p, o in gm:
@@ -171,21 +142,6 @@ def guardarViajesFinalizados(sujeto, gm):
 
     viajesFinalizadosDB.serialize(format='turtle')
     return Graph() # TODO: Devolver algo
-
-@app.route("/respuesta-propuesta-viaje", methods=['POST'])
-def recibir_respuesta_propuesta_viaje():
-    if request.method == 'POST':
-        respuesta = request.form['respuesta']
-        if respuesta == "si":
-
-            # TODO: Llamada a cobro
-
-            # TODO: Llamada viajes confirmados
-
-            return render_template('viaje_confirmado.html')
-        else:
-            return render_template('iface.html')
-
 
 def obtener_viaje_no_valorado_usuario(usuario):
     global viajesFinalizadosDB
@@ -215,6 +171,9 @@ def obtener_viaje_no_valorado_usuario(usuario):
         query,
         initNs={'ECSDI': ECSDI, 'RDF': RDF})
 
+    if len(resultsQuery) == 0:
+        return None
+
     viaje_a_valorar = {}
     logger.info('Viajes por valorar encontrados: ' + str(len(resultsQuery)))
     # for con solo 1 elemento
@@ -240,13 +199,14 @@ def browser_iface_encuesta_satisfaccion_finalizada():
     if request.method == 'GET':
         return render_template('encuesta_satisfaccion_finalizada.html')
     else:
-        print(request.form['grado_ludica_viaje'])
-        print(request.form['grado_cultural_viaje'])
-        print(request.form['grado_festivo_viaje'])
+        print('Grado ludica viaje: ' + request.form['grado_ludica_viaje'])
+        print('Grado cultural viaje: ' + request.form['grado_cultural_viaje'])
+        print('Grado festivo viaje: ' + request.form['grado_festivo_viaje'])
+        print('Usuario: ' + request.form['usuario'])
 
-        print(request.form['grado_ludica_opinion'])
-        print(request.form['grado_cultural_opinion'])
-        print(request.form['grado_festivo_opinion'])
+        print('Grado ludica opinion: ' + request.form['grado_ludica_opinion'])
+        print('Grado cultural opinion: ' + request.form['grado_cultural_opinion'])
+        print('Grado festivo opinion: ' + request.form['grado_festivo_opinion'])
 
         grado_ludica_viaje = request.form['grado_ludica_viaje']
         grado_cultural_viaje = request.form['grado_cultural_viaje']
@@ -257,9 +217,69 @@ def browser_iface_encuesta_satisfaccion_finalizada():
         grado_festivo_opinion = request.form['grado_festivo_opinion']
 
         viaje_id = request.form['viaje_id']
+        usuario = request.form['usuario']
 
-        satisfaccionDB
+        query = f"""
+            SELECT ?gusto_ludica ?gusto_cultural ?gusto_festivo
+            WHERE {{
+                ?usuario ECSDI:gusto_actividades_ludicas ?gusto_ludica ;
+                                ECSDI:gusto_actividades_culturales ?gusto_cultural ;
+                                ECSDI:gusto_actividades_festivas ?gusto_festivo .
+                FILTER (?usuario = ECSDI:{usuario})
+            }}
+            LIMIT 1
+            """
 
+        print(query)
+
+        resultsQuery = satisfaccionDB.query(
+            query,
+            initNs={'ECSDI': ECSDI, 'RDF': RDF})
+
+        nuevo_gusto_actividades_culturales = max(0, min(3, int(grado_cultural_opinion) + int(grado_cultural_viaje)))
+        nuevo_gusto_actividades_festivas = max(0, min(3, int(grado_festivo_opinion) + int(grado_festivo_viaje)))
+        nuevo_gusto_actividades_ludicas = max(0, min(3, int(grado_ludica_opinion) + int(grado_ludica_viaje)))
+
+        print('Nuevo gusto ludica: ' + str(nuevo_gusto_actividades_ludicas))
+        print('Nuevo gusto cultural: ' + str(nuevo_gusto_actividades_culturales))
+        print('Nuevo gusto festivo: ' + str(nuevo_gusto_actividades_festivas))
+
+        logger.info("En la BD habia " + str(len(resultsQuery)) + " resultados")
+
+        if len(resultsQuery) != 0:
+            for row in resultsQuery:
+                regsitro_gusto_actividades_ludicas = row['gusto_ludica']
+                registro_gusto_actividades_culturales = row['gusto_cultural']
+                registro_gusto_actividades_festivas = row['gusto_festivo']
+
+                print('Registro gusto ludica: ' + str(regsitro_gusto_actividades_ludicas))
+                print('Registro gusto cultural: ' + str(registro_gusto_actividades_culturales))
+                print('Registro gusto festivo: ' + str(registro_gusto_actividades_festivas))
+
+                nuevo_gusto_actividades_ludicas = max(0, min(3, media(nuevo_gusto_actividades_ludicas, int(regsitro_gusto_actividades_ludicas))))
+                nuevo_gusto_actividades_culturales = max(0, min(3, media(nuevo_gusto_actividades_culturales, int(registro_gusto_actividades_culturales))))
+                nuevo_gusto_actividades_festivas = max(0, min(3, media(nuevo_gusto_actividades_festivas, int(registro_gusto_actividades_festivas))))
+
+                satisfaccionDB.remove((ECSDI[usuario], ECSDI.gusto_actividades_ludicas, None))
+                satisfaccionDB.remove((ECSDI[usuario], ECSDI.gusto_actividades_culturales, None))
+                satisfaccionDB.remove((ECSDI[usuario], ECSDI.gusto_actividades_festivas, None))
+
+        print('Gusto ludica a insertar: ' + str(nuevo_gusto_actividades_ludicas))
+        print('Gusto cultural a insertar: ' + str(nuevo_gusto_actividades_culturales))
+        print('Gusto festivo a insertar: ' + str(nuevo_gusto_actividades_festivas))
+
+        satisfaccionDB.add((ECSDI[usuario], ECSDI.gusto_actividades_ludicas,
+                            Literal(nuevo_gusto_actividades_ludicas, datatype=XSD.integer)))
+        satisfaccionDB.add((ECSDI[usuario], ECSDI.gusto_actividades_culturales,
+                            Literal(nuevo_gusto_actividades_culturales, datatype=XSD.integer)))
+        satisfaccionDB.add((ECSDI[usuario], ECSDI.gusto_actividades_festivas,
+                            Literal(nuevo_gusto_actividades_festivas, datatype=XSD.integer)))
+
+        print("Estado BD de satisfaccion")
+
+        logger.info(satisfaccionDB.serialize(format='turtle'))
+
+        return render_template('encuesta_satisfaccion_finalizada.html', usuario = usuario)
 
 @app.route("/iface", methods=['GET', 'POST'])
 def browser_iface_encuesta_satisfaccion():
@@ -269,7 +289,7 @@ def browser_iface_encuesta_satisfaccion():
     """
 
     if request.method == 'GET':
-        return render_template('pedir_usuario.html')
+            return render_template('pedir_usuario.html')
     else:
         usuario = request.form['Usuario']
 
@@ -278,8 +298,10 @@ def browser_iface_encuesta_satisfaccion():
         #                            error_message='Se debe escoger un mínimo de algo en algun tipo de actividad')
 
         viaje_no_valorado_usuario = obtener_viaje_no_valorado_usuario(usuario=usuario)
+        if viaje_no_valorado_usuario is None:
+            return render_template('no_hay mas_encuestas.html')
 
-        return render_template('encuesta_satisfaccion.html', viaje_no_valorado_usuario=viaje_no_valorado_usuario)
+        return render_template('encuesta_satisfaccion.html', viaje_no_valorado_usuario=viaje_no_valorado_usuario, usuario=usuario)
 
 
 @app.route("/stop")

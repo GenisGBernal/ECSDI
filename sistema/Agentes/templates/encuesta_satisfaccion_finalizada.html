@@ -6,7 +6,13 @@
 <body>
 
 <t1>Encuesta de satisfaccion completada</t1>
-<p>Muchas gracias, esto nos servira para conocer mejor tus gustos</p>
+<p>Muchas gracias, esto nos servira para conocer mejor tus gustos.</p>
+<form method="post" action="/iface">
+    <input type="hidden" name="Usuario" value={{ usuario }}>
+    <p>
+        <button type="submit">Valorar mas encuestas</button>
+    </p>
+</form>
 
 </body>
 </html>
