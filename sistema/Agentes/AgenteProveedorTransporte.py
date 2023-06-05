@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-filename: SimpleInfoAgent
+filename: AgenteProveedorTransporte
 
 Antes de ejecutar hay que añadir la raiz del proyecto a la variable PYTHONPATH
 
-Agente que se registra como agente de hoteles y espera peticiones
+Agente que obtiene metodos de transporte
 
-@author: javier
+@author: daniel
 """
 
 from datetime import datetime
@@ -26,7 +26,7 @@ from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, send_message, get_message_properties
+from AgentUtil.ACLMessages import build_message, send_message, getAgentInfo, get_message_properties
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.DSO import DSO
@@ -53,7 +53,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--open', help="Define si el servidor esta abierto al exterior o no", action='store_true',
                     default=False)
 parser.add_argument('--verbose', help="Genera un log de la comunicacion del servidor web", action='store_true',
-                    default=False)
+                        default=False)
 parser.add_argument('--port', type=int, help="Puerto de comunicacion del agente")
 parser.add_argument('--dhost', help="Host del agente de directorio")
 parser.add_argument('--dport', type=int, help="Puerto de comunicacion del agente de directorio")
@@ -100,12 +100,10 @@ agn = Namespace("http://www.agentes.org#")
 # Contador de mensajes
 mss_cnt = 0
 
-
 def getMessageCount():
     global mss_cnt
     mss_cnt += 1
     return mss_cnt
-
 
 # Datos del Agente
 AgenteProveedorTransporte = Agent('AgenteProveedorTransporte',
@@ -134,7 +132,6 @@ def register_message():
     usando una performativa Request y una accion Register del
     servicio de directorio
 
-    :param gmess:
     :return:
     """
 
@@ -144,7 +141,7 @@ def register_message():
     return gr
 
 
-def inicializaVueloNulo(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
+def generadorVuelosEnElPasado(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
     flight_id = str(uuid.uuid4())
     flight_price = 0
 
@@ -258,7 +255,7 @@ def remote_transporte_search(dia_partida, dia_retorno, lugar_partida, lugar_lleg
     logger.info('Lugar llegada: ' + lugar_partida)
 
     if datetime.strptime(dia_partida, '%Y-%m-%d') < datetime.now():
-        inicializaVueloNulo(dia_partida, dia_retorno, lugar_partida, lugar_llegada)
+        generadorVuelosEnElPasado(dia_partida, dia_retorno, lugar_partida, lugar_llegada)
         logger.info("Fecha de partida anterior a la actual, se devolvera vuelo nulo")
 
     else:
@@ -315,15 +312,12 @@ def stop():
 def comunicacion():
     """
     Entrypoint de comunicacion del agente
-    Simplemente retorna un objeto fijo que representa una
-    respuesta a una busqueda de hotel
 
     Asumimos que se reciben siempre acciones que se refieren a lo que puede hacer
     el agente (buscar con ciertas restricciones, reservar)
     Las acciones se mandan siempre con un Request
     Prodriamos resolver las busquedas usando una performativa de Query-ref
     """
-    global dsgraph
     global mss_cnt
 
     logger.info('Peticion de informacion recibida')

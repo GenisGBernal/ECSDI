@@ -1,0 +1,7 @@
+@prefix ns1: <http://watafak.amigo/ontologies/ecsdi/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ns1:daniel ns1:gusto_actividades_culturales 2 ;
+    ns1:gusto_actividades_festivas 3 ;
+    ns1:gusto_actividades_ludicas 1 .
+

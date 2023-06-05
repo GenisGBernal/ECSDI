@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF
+   xmlns:ECSDI="http://watafak.amigo/ontologies/ecsdi/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/388EAD6266">
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Llar D'infants Patufet</ECSDI:nombre_actividad>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">commercialplace</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">schools</ECSDI:tag_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_cultural"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/9CB46109B5">
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">dance</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">transport</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">events</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">nightclub</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">seafood</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shopping</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">restaurant</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">club</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">bar</ECSDI:tag_actividad>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">CDLC</ECSDI:nombre_actividad>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_festiva"/>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/3AB95ACC51">
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">musicvenue</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">activities</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">commercialplace</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">events</ECSDI:tag_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Fira de Barcelona</ECSDI:nombre_actividad>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_festiva"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/4368DF268C">
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">field</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sports</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sportclub</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">stadium</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">activities</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">commercialplace</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shopping</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">club</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">attraction</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">basketball</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">transport</ECSDI:tag_actividad>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_festiva"/>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Palau Blaugrana</ECSDI:nombre_actividad>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/62F79EFB0D">
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shopping</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">bar</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">cheap</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sports</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">pub</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">restaurant</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">activities</ECSDI:tag_actividad>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">The George Payne</ECSDI:nombre_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_festiva"/>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/15C8B8148C">
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">nightlife</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">restaurant</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">activities</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">club</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">bar</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">attraction</ECSDI:tag_actividad>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Dry Martini</ECSDI:nombre_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_festiva"/>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-39">
+    <ECSDI:actividad_manana rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/4368DF268C"/>
+    <ECSDI:actividad_tarde rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/631EC5882F"/>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividades_ordenadas"/>
+    <ECSDI:actividad_noche rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/EC95F3678B"/>
+    <ECSDI:dia rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2023-07-12</ECSDI:dia>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/631EC5882F">
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">medicalcenter</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">professionalservices</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">commercialplace</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">hospital</ECSDI:tag_actividad>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_cultural"/>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Hospital Sant Joan de Déu Barcelona</ECSDI:nombre_actividad>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-36">
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividades_ordenadas"/>
+    <ECSDI:actividad_manana rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/15C8B8148C"/>
+    <ECSDI:actividad_noche rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/9CB40CB5D0"/>
+    <ECSDI:dia rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2023-07-09</ECSDI:dia>
+    <ECSDI:actividad_tarde rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/441D42A97F"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/0196605DF6">
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shopping</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">club</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">bar</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">attraction</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">commercialplace</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">tourguide</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">transport</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">events</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">restaurant</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">activities</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">pub</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_festiva"/>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">El Bosc de les Fades</ECSDI:nombre_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/9CB40CB5D0">
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sights</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">activities</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">commercialplace</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shopping</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">restaurant</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">attraction</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">tourguide</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">souvenir</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">museum</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">landmark</ECSDI:tag_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_cultural"/>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Casa Batlló</ECSDI:nombre_actividad>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/EC95F3678B">
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_festiva"/>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">activities</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">restaurant</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">commercialplace</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shopping</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">club</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">bar</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">attraction</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">tourguide</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">cheap</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">transport</ECSDI:tag_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Polaroid</ECSDI:nombre_actividad>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-35">
+    <ECSDI:actividad_tarde rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/EC95F3678B"/>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividades_ordenadas"/>
+    <ECSDI:dia rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2023-07-08</ECSDI:dia>
+    <ECSDI:actividad_manana rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/ludica/9F937BF579"/>
+    <ECSDI:actividad_noche rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/631EC5882F"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-33">
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividades_ordenadas"/>
+    <ECSDI:actividad_manana rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/EC95F3678B"/>
+    <ECSDI:dia rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2023-07-06</ECSDI:dia>
+    <ECSDI:actividad_noche rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/EC95F3678B"/>
+    <ECSDI:actividad_tarde rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/9CB40CB5D0"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/441D42A97F">
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">commercialplace</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">schools</ECSDI:tag_actividad>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">American School of Barcelona</ECSDI:nombre_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_cultural"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/IntervaloDeActividades-31">
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/viaje_actividades"/>
+    <ECSDI:ActividadesOrdenadas rdf:resource="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-32"/>
+    <ECSDI:ActividadesOrdenadas rdf:resource="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-33"/>
+    <ECSDI:ActividadesOrdenadas rdf:resource="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-34"/>
+    <ECSDI:ActividadesOrdenadas rdf:resource="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-35"/>
+    <ECSDI:ActividadesOrdenadas rdf:resource="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-36"/>
+    <ECSDI:ActividadesOrdenadas rdf:resource="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-37"/>
+    <ECSDI:ActividadesOrdenadas rdf:resource="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-38"/>
+    <ECSDI:ActividadesOrdenadas rdf:resource="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-39"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/00D6517781">
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">activities</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">commercialplace</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">professionalservices</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">bar</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">club</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">attraction</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">tourguide</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">cheap</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">dance</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">events</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">nightclub</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">musicvenue</ECSDI:tag_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Sala Apolo</ECSDI:nombre_actividad>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_festiva"/>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/ludica/FDBA840166">
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_ludica"/>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">tattoo</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">gift</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">activities</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">commercialplace</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shopping</ECSDI:tag_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Poker Tattoo</ECSDI:nombre_actividad>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-38">
+    <ECSDI:actividad_tarde rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/ludica/9F937BF579"/>
+    <ECSDI:actividad_noche rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/62F79EFB0D"/>
+    <ECSDI:dia rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2023-07-11</ECSDI:dia>
+    <ECSDI:actividad_manana rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/ludica/FDBA840166"/>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividades_ordenadas"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-37">
+    <ECSDI:actividad_manana rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/441D42A97F"/>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividades_ordenadas"/>
+    <ECSDI:actividad_noche rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/0196605DF6"/>
+    <ECSDI:actividad_tarde rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/9CB40CB5D0"/>
+    <ECSDI:dia rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2023-07-10</ECSDI:dia>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-32">
+    <ECSDI:dia rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2023-07-05</ECSDI:dia>
+    <ECSDI:actividad_tarde rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/ludica/D3C502B573"/>
+    <ECSDI:actividad_manana rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/3AB95ACC51"/>
+    <ECSDI:actividad_noche rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/9CB46109B5"/>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividades_ordenadas"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/ludica/9F937BF579">
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">mall</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shopping</ECSDI:tag_actividad>
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_ludica"/>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">C C Gran Via 2</ECSDI:nombre_actividad>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/actividad/ludica/D3C502B573">
+    <ECSDI:tipo_actividad rdf:resource="http://watafak.amigo/ontologies/ecsdi/tipo_ludica"/>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">clothing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">sightseeing</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">commercialplace</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shopping</ECSDI:tag_actividad>
+    <ECSDI:tag_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">fashion</ECSDI:tag_actividad>
+    <ECSDI:subtipo_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">POINT_OF_INTEREST</ECSDI:subtipo_actividad>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad"/>
+    <ECSDI:nombre_actividad rdf:datatype="http://www.w3.org/2001/XMLSchema#string">La Balear</ECSDI:nombre_actividad>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/ActividadesParaUnDia-34">
+    <ECSDI:actividad_manana rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/4368DF268C"/>
+    <ECSDI:dia rdf:datatype="http://www.w3.org/2001/XMLSchema#string">2023-07-07</ECSDI:dia>
+    <ECSDI:actividad_noche rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/festiva/00D6517781"/>
+    <rdf:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividades_ordenadas"/>
+    <ECSDI:actividad_tarde rdf:resource="http://watafak.amigo/ontologies/ecsdi/actividad/cultural/388EAD6266"/>
+  </rdf:Description>
+</rdf:RDF>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+
+<t1>Encuesta de satisfaccion de viajes</t1>
+<p> Este es uno de los viajes que ha realizado. Por favor indique el grado de satsifaccion de cada uno de los siguientes tipos de actividades:</p>
+{% if error_message %}
+    <p style="color: red;">{{ error_message }}</p>
+{% endif %}
+<ul>
+    {% for key, value in viaje_no_valorado_usuario.items() %}
+        <li> {{ key }} : {{ value }}</li>
+    {% endfor %}
+</ul>
+<form method="post" action="/encuesta_finalizada">
+    <input type="hidden" name="viaje_id" value={{ viaje_no_valorado_usuario['viaje_id'] }}>
+    <input type="hidden" name="grado_ludica_viaje" value={{ viaje_no_valorado_usuario['Grado ludica']}}>
+    <input type="hidden" name="grado_cultural_viaje" value={{ viaje_no_valorado_usuario['Grado cultural']}}>
+    <input type="hidden" name="grado_festivo_viaje" value={{ viaje_no_valorado_usuario['Grado festivo']}}>
+    <input type="hidden" name="usuario" value={{ usuario }}>
+    <p><label for="grado_ludica">Cantidad de Ludico:</label></p>
+        <input type="radio" name="grado_ludica_opinion" value=1 required> Me han gustado mucho, quiero mas la proxima vez<br>
+        <input type="radio" name="grado_ludica_opinion" value=0> La cantidad era adecuada<br>
+        <input type="radio" name="grado_ludica_opinion" value=-1> Demasiadas, la proxima vez quiero menos<br>
+
+    <p><label for="grado_cultural">Cantidad de Cultural:</label></p>
+        <input type="radio" name="grado_cultural_opinion" value=1 required> Me han gustado mucho, quiero mas la proxima vez<br>
+        <input type="radio" name="grado_cultural_opinion" value=0> La canitidad era adecuada<br>
+        <input type="radio" name="grado_cultural_opinion" value=-1> Demasiadas, la proxima vez quiero menos<br>
+
+    <p><label for="grado_festivo">Cantidad de Festivo:</label></p>
+        <input type="radio" name="grado_festivo_opinion" value=1 required> Me han gustado mucho, quiero mas la proxima vez<br>
+        <input type="radio" name="grado_festivo_opinion" value=0> La cantidad era adecuada<br>
+        <input type="radio" name="grado_festivo_opinion" value=-1> Demasiadas, la proxima vez quiero menos<br>
+
+    <p>
+        <button type="submit">Send</button>
+    </p>
+</form>
+<form method="get" action="/iface">
+    <p>
+        <button type="submit">No quiero valorar este viaje</button>
+    </p>
+</form>
+</body>
+</html>
