@@ -187,26 +187,26 @@ def recibir_respuesta_propuesta_viaje():
             return render_template('iface.html')
 
 
-def obtener_viajes_no_valorados_usuario(usuario):
+def obtener_viaje_no_valorado_usuario(usuario):
     global viajesFinalizadosDB
 
     query = f"""
-        SELECT ?viaje ?lugarDePartida ?lugarDeLlegada ?diaDePartida ?diaDeRetorno ?precio ?grado_ludica ?grado_cultural ?grado_festivo
+        SELECT ?viaje ?diaDePartida ?diaDeRetorno ?lugarDePartida ?lugarDeLlegada ?precio_total ?grado_ludica ?grado_cultural ?grado_festivo
         WHERE {{
             ?viaje RDF:type ECSDI:ViajeFinalizado ;
                             ECSDI:viajeValorado ?viajeValorado_param ;
                             ECSDI:Usuario ?usuario_param ;
-                            ECSDI:LugarDePartida ?lugarDePartida ;
-                            ECSDI:LugarDeLlegada ?lugarDeLlegada ;
                             ECSDI:DiaDePartida ?diaDePartida ;
                             ECSDI:DiaDeRetorno ?diaDeRetorno ;
-                            ECSDI:precio_total ?precio ;
+                            ECSDI:LugarDePartida ?lugarDePartida ;
+                            ECSDI:LugarDeLlegada ?lugarDeLlegada ;
+                            ECSDI:precio_total ?precio_total ;
                             ECSDI:grado_ludica ?grado_ludica ;
                             ECSDI:grado_cultural ?grado_cultural ;
                             ECSDI:grado_festivo ?grado_festivo .
-            FILTER (?usuario_param = {Literal(usuario, datatype=XSD.string)} &&
-                    ?viajeValorado_param = {Literal(False, datatype=XSD.boolean)})
+            FILTER (?viajeValorado_param = false && ?usuario_param = "{usuario}")
         }}
+        LIMIT 1
         """
 
     logger.info(query)
@@ -215,31 +215,53 @@ def obtener_viajes_no_valorados_usuario(usuario):
         query,
         initNs={'ECSDI': ECSDI, 'RDF': RDF})
 
-    viajes_a_valorar = []
-    search_count = 0
+    viaje_a_valorar = {}
     logger.info('Viajes por valorar encontrados: ' + str(len(resultsQuery)))
+    # for con solo 1 elemento
     for row in resultsQuery:
-        datos_viaje = {'viaje': row['viaje'], 'lugarDePartida': row['lugarDePartida'],
-                       'lugarDeLlegada': row['lugarDeLlegada'], 'diaDePartida': row['diaDePartida'],
-                       'diaDeRetorno': row['diaDeRetorno'], 'precio': row['precio'],
-                       'grado_ludica': row['grado_ludica'], 'grado_cultural': row['grado_cultural'],
-                       'grado_festivo': row['grado_festivo']}
-        viajes_a_valorar.append(datos_viaje)
+        id_viaje = row['viaje']
+        viaje_a_valorar = {'viaje_id': id_viaje, 'Lugar de partida': row['lugarDePartida'],
+                       'Lugar de llegada': row['lugarDeLlegada'], 'Dia de partida': row['diaDePartida'],
+                       'Dia de retorno': row['diaDeRetorno'], 'Precio': row['precio_total'],
+                       'Grado ludica': row['grado_ludica'], 'Grado cultural': row['grado_cultural'],
+                       'Grado festivo': row['grado_festivo']}
 
-        viajesFinalizadosDB.remove((ECSDI[row['viaje']], ECSDI.viajeValorado, Literal(False, datatype=XSD.boolean)))
-        viajesFinalizadosDB.add((ECSDI[row['viaje']], ECSDI.viajeValorado, Literal(True, datatype=XSD.boolean)))
+        viajesFinalizadosDB.remove((id_viaje, ECSDI.viajeValorado, Literal(False, datatype=XSD.boolean)))
+        viajesFinalizadosDB.add((id_viaje, ECSDI.viajeValorado, Literal(True, datatype=XSD.boolean)))
 
-        search_count += 1
+    logger.info(viajesFinalizadosDB.serialize(format='turtle'))
 
-    logger.info(viajesFinalizadosDB.parse(format='turtle'))
+    return viaje_a_valorar
 
-    return viajes_a_valorar
-
-@app.route("/encuesta_finalizada", methods=['GET'])
+@app.route("/encuesta_finalizada", methods=['GET', 'POST'])
 def browser_iface_encuesta_satisfaccion_finalizada():
-    return render_template('encuesta_satisfaccion_finalizada.html')
+    global satisfaccionDB
 
-@app.route("/encuesta_satisfaccion", methods=['GET', 'POST'])
+    if request.method == 'GET':
+        return render_template('encuesta_satisfaccion_finalizada.html')
+    else:
+        print(request.form['grado_ludica_viaje'])
+        print(request.form['grado_cultural_viaje'])
+        print(request.form['grado_festivo_viaje'])
+
+        print(request.form['grado_ludica_opinion'])
+        print(request.form['grado_cultural_opinion'])
+        print(request.form['grado_festivo_opinion'])
+
+        grado_ludica_viaje = request.form['grado_ludica_viaje']
+        grado_cultural_viaje = request.form['grado_cultural_viaje']
+        grado_festivo_viaje = request.form['grado_festivo_viaje']
+
+        grado_ludica_opinion = request.form['grado_ludica_opinion']
+        grado_cultural_opinion = request.form['grado_cultural_opinion']
+        grado_festivo_opinion = request.form['grado_festivo_opinion']
+
+        viaje_id = request.form['viaje_id']
+
+        satisfaccionDB
+
+
+@app.route("/iface", methods=['GET', 'POST'])
 def browser_iface_encuesta_satisfaccion():
     """
     Permite la comunicacion con el agente via un navegador
@@ -255,9 +277,9 @@ def browser_iface_encuesta_satisfaccion():
         #     return render_template('iface.html',
         #                            error_message='Se debe escoger un mínimo de algo en algun tipo de actividad')
 
-        viajes_no_valorados_usuario = obtener_viajes_no_valorados_usuario(usuario=usuario)
+        viaje_no_valorado_usuario = obtener_viaje_no_valorado_usuario(usuario=usuario)
 
-        return render_template('encuesta_satisfaccion.html', viajes_no_valorados_usuario=viajes_no_valorados_usuario)
+        return render_template('encuesta_satisfaccion.html', viaje_no_valorado_usuario=viaje_no_valorado_usuario)
 
 
 @app.route("/stop")
@@ -370,25 +392,37 @@ def inicializarViajesFinalizadosDataTesing():
     viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.viajeValorado, Literal(False, datatype=XSD.boolean)))
     viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.Usuario, Literal('daniel', datatype=XSD.string)))
     viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.DiaDePartida, Literal('2019-05-01', datatype=XSD.date)))
-    viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.DiaDeLlegada, Literal('2019-05-05', datatype=XSD.date)))
+    viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.DiaDeRetorno, Literal('2019-05-05', datatype=XSD.date)))
     viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.precio_total, Literal(100, datatype=XSD.float)))
-    viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.LugarDeSalida, Literal('BCN', datatype=XSD.string)))
+    viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.LugarDePartida, Literal('BCN', datatype=XSD.string)))
     viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.LugarDeLlegada, Literal('MAD', datatype=XSD.string)))
     viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.grado_ludica, Literal(0, datatype=XSD.integer)))
     viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.grado_cultural, Literal(1, datatype=XSD.integer)))
     viajesFinalizadosDB.add((ECSDI['viaje1'], ECSDI.grado_festivo, Literal(2, datatype=XSD.integer)))
 
     viajesFinalizadosDB.add((ECSDI['viaje2'], RDF.type, ECSDI['ViajeFinalizado']))
-    viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.viajeValorado, Literal(True, datatype=XSD.boolean)))
+    viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.viajeValorado, Literal(False, datatype=XSD.boolean)))
     viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.Usuario, Literal('daniel', datatype=XSD.string)))
     viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.DiaDePartida, Literal('2019-05-01', datatype=XSD.date)))
-    viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.DiaDeLlegada, Literal('2019-05-05', datatype=XSD.date)))
+    viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.DiaDeRetorno, Literal('2019-05-05', datatype=XSD.date)))
     viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.precio_total, Literal(100, datatype=XSD.float)))
-    viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.LugarDeSalida, Literal('NYC', datatype=XSD.string)))
+    viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.LugarDePartida, Literal('NYC', datatype=XSD.string)))
     viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.LugarDeLlegada, Literal('MAD', datatype=XSD.string)))
     viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.grado_ludica, Literal(0, datatype=XSD.integer)))
     viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.grado_cultural, Literal(1, datatype=XSD.integer)))
     viajesFinalizadosDB.add((ECSDI['viaje2'], ECSDI.grado_festivo, Literal(2, datatype=XSD.integer)))
+
+    viajesFinalizadosDB.add((ECSDI['viaje3'], RDF.type, ECSDI['ViajeFinalizado']))
+    viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.viajeValorado, Literal(False, datatype=XSD.boolean)))
+    viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.Usuario, Literal('genis', datatype=XSD.string)))
+    viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.DiaDePartida, Literal('2019-05-01', datatype=XSD.date)))
+    viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.DiaDeRetorno, Literal('2019-05-05', datatype=XSD.date)))
+    viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.precio_total, Literal(100, datatype=XSD.float)))
+    viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.LugarDePartida, Literal('BCN', datatype=XSD.string)))
+    viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.LugarDeLlegada, Literal('MAD', datatype=XSD.string)))
+    viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.grado_ludica, Literal(0, datatype=XSD.integer)))
+    viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.grado_cultural, Literal(1, datatype=XSD.integer)))
+    viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.grado_festivo, Literal(2, datatype=XSD.integer)))
 
     logger.info(viajesFinalizadosDB.serialize(format='turtle'))
 
