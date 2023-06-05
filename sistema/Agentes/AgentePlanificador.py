@@ -340,7 +340,7 @@ def planificar_viaje(sujeto, gm):
     gmess += g_hospedaje
     gmess += g_transporte
 
-
+    precio_vuelo = g_transporte.value(subject=sujeto, predicate=ECSDI.precio).toPython()
 
     gmess.add((sujeto, ECSDI.precio_total, Literal(6969, datatype=XSD.float)))
 

@@ -176,6 +176,7 @@ def recomendarActividadesUsuario(grado_ludica, grado_cultural, grado_festivo, fe
     gmess.add((sujeto, RDF.type, ECSDI.IntervaloDeActividades))
     gmess.add((sujeto, ECSDI.DiaDePartida, Literal(fecha_ida, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(fecha_vuelta, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.LugarDeLlegada, Literal('BCN', datatype=XSD.integer)))
     gmess.add((sujeto, ECSDI.grado_ludica, Literal(grado_ludica, datatype=XSD.integer)))
     gmess.add((sujeto, ECSDI.grado_cultural, Literal(grado_cultural, datatype=XSD.integer)))
     gmess.add((sujeto, ECSDI.grado_festiva, Literal(grado_festivo, datatype=XSD.integer)))
@@ -190,8 +191,9 @@ def recomendarActividadesUsuario(grado_ludica, grado_cultural, grado_festivo, fe
 
     g_actividades = clean_graph(gr)
 
-    user_id = usuario.replace(ECSDI, "")
+    user_id = usuario.replace(str(ECSDI), "")
     file_a_guardar = file_path_viajes_recomendaciones + user_id + ".rdf"
+    logger.info('Guardando en: ' + file_a_guardar)
 
     with open(file_a_guardar, "wb") as file:
         g_actividades.serialize(destination=file, format='xml')
@@ -563,7 +565,7 @@ def agentbehavior2():
 
 if __name__ == '__main__':
     os.makedirs(os.path.dirname(file_path_satisfaccion), exist_ok=True)
-    os.makedirs(os.path.dirname(file_path_viajes_recomendaciones), exist_ok=True)
+    os.makedirs(os.path.dirname(file_path_viajes_recomendaciones_ini), exist_ok=True)
     inicializarViajesFinalizadosDataTesing()  # TODO data para testing
     # Ponemos en marcha los behaviors
     ab1 = Process(target=agentbehavior1, args=(cola1,))
