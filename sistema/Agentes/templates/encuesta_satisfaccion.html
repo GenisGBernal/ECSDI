@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+
+<t1>Encuesta de satisfaccion de viajes</t1>
+<p> Estos son los viajes que ha realizado:</p>
+{% if error_message %}
+    <p style="color: red;">{{ error_message }}</p>
+{% endif %}
+{% for viaje in viajes_no_valorados_usuario %}
+    <ul>
+        {% for key, value in viaje.items() %}
+            <li> {{ key }} : {{ value }}</li>
+        {% endfor %}
+    </ul>
+    <form method="post" action="/encuesta_finalizada">
+        <p><label for="grado_ludica">Cantidad de Ludico:</label></p>
+            <input type="radio" name="grado_ludica" value=1 required> Me han gustado mucho, quiero mas la proxima vez
+            <input type="radio" name="grado_ludica" value=0> La cantidad era adecuada
+            <input type="radio" name="grado_ludica" value=-1> Demasiadas, la proxima vez quiero menos
+
+        <p><label for="grado_cultural">Cantidad de Cultural:</label></p>
+            <input type="radio" name="grado_cultural" value=1 required> Me han gustado mucho, quiero mas la proxima vez
+            <input type="radio" name="grado_cultural" value=0> La canitidad era adecuada
+            <input type="radio" name="grado_cultural" value=-1> Demasiadas, la proxima vez quiero menos
+
+        <p><label for="grado_festivo">Cantidad de Festivo:</label></p>
+            <input type="radio" name="grado_festivo" value=1 required> Me han gustado mucho, quiero mas la proxima vez
+            <input type="radio" name="grado_festivo" value=0> La cantidad era adecuada
+            <input type="radio" name="grado_festivo" value=-1> Demasiadas, la proxima vez quiero menos
+
+        <p>
+            <button type="submit">Send</button>
+        </p>
+    </form>
+{% endif %}
+</body>
+</html>

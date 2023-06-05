@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+
+<t1>Encuesta de satisfaccion de viajes</t1>
+<p>Por favor, introduzca su nombre de usuario</p>
+{% if error_message %}
+    <p style="color: red;">{{ error_message }}</p>
+{% endif %}
+<form method="post" action="/encuesta_satisfaccion">
+    <p><label>Usuario:</label> <input type="text" name="Usuario" required></p>
+    <p>
+        <button type="submit">Send</button>
+    </p>
+</form>
+</body>
+</html>
