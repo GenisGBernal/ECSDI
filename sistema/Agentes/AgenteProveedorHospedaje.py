@@ -30,6 +30,7 @@ from AgentUtil.ACLMessages import registerAgent
 from AgentUtil.OntoNamespaces import ECSDI
 
 from amadeus import Client, ResponseError
+import random
 
 AMADEUS_KEY = 'EiHVAHxxhgGwlEPZTZ4flG42U1x5QvMI'
 AMADEUS_SECRET = 'n32zEDo4N2CAAtLB'
@@ -146,7 +147,7 @@ def remote_hospedaje_search(cityCode):
         hotel_id = ECSDI['hotel/'+h['hotelId']]
         hospedajeDB.add((ECSDI[hotel_id], RDF.type, ECSDI.Hospedaje))
         hospedajeDB.add((ECSDI[hotel_id], ECSDI.identificador, Literal(hotel_name, datatype=XSD.string)))
-        hospedajeDB.add((ECSDI[hotel_id], ECSDI.precio, Literal(100, datatype=XSD.float)))
+        hospedajeDB.add((ECSDI[hotel_id], ECSDI.precio, Literal(random.randrange(100,200), datatype=XSD.float)))
         hospedajeDB.add((ECSDI[hotel_id], ECSDI.viaje_ciudad, city))
 
     

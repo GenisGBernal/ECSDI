@@ -340,9 +340,12 @@ def planificar_viaje(sujeto, gm):
     gmess += g_hospedaje
     gmess += g_transporte
 
+    hotel = g_hospedaje.value(predicate=RDF.type, object=ECSDI.Hospedaje)
+    precio_hotel = g_hospedaje.value(subject=sujeto, predicate=ECSDI.precio).toPython()
     precio_vuelo = g_transporte.value(subject=sujeto, predicate=ECSDI.precio).toPython()
+    
 
-    gmess.add((sujeto, ECSDI.precio_total, Literal(6969, datatype=XSD.float)))
+    gmess.add((sujeto, ECSDI.precio_total, Literal(precio_hotel+precio_vuelo, datatype=XSD.float)))
 
     return build_message(gmess, ACL['inform'], sender=AgentePlanificador.uri, msgcnt=getMessageCount(), content=sujeto)
 
