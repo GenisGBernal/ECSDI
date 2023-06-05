@@ -392,8 +392,7 @@ def actualizar_estado_viajes_finalizados():
     ))
 
     if len(sujetos_viajes_finalizados) > 0:
-        # TODO: HACER CUANDO AGENTE LISTO
-        # agenteRecomendadorYSatisfaccion = getAgentInfo(DSO.AgenteRecomendadorYSatisfaccion, AgenteDirectorio, AgenteGestorDeViajes, getMessageCount())
+        agenteRecomendadorYSatisfaccion = getAgentInfo(DSO.AgenteRecomendadorYSatisfaccion, AgenteDirectorio, AgenteGestorDeViajes, getMessageCount())
 
         gmess = Graph()
         IAA = Namespace('IAActions')
@@ -401,7 +400,7 @@ def actualizar_estado_viajes_finalizados():
         gmess.bind('iaa', IAA)
         gmess.bind('ECSDI', ECSDI)
         sujeto = ECSDI['ViajesFinalizados-' + str(getMessageCount())]
-        gmess.add((sujeto, RDF.type, ECSDI.viaje_finalizado))
+        gmess.add((sujeto, RDF.type, ECSDI.TomaViajeFinalizado))
 
         print("antes")
         print(viajesConfirmadosDB.serialize(format="turtle"))
@@ -417,12 +416,12 @@ def actualizar_estado_viajes_finalizados():
         print(gmess.serialize(format="turtle"))
         
 
-        # msg = build_message(gmess, perf=ACL.request,
-        #             sender=AgenteGestorDeViajes.uri,
-        #             receiver=agenteRecomendadorYSatisfaccion.uri,
-        #             msgcnt=getMessageCount(),
-        #             content=sujeto)
-        # gr = send_message(msg, agenteRecomendadorYSatisfaccion.address)
+        msg = build_message(gmess, perf=ACL.request,
+                    sender=AgenteGestorDeViajes.uri,
+                    receiver=agenteRecomendadorYSatisfaccion.uri,
+                    msgcnt=getMessageCount(),
+                    content=sujeto)
+        gr = send_message(msg, agenteRecomendadorYSatisfaccion.address)
 
     logger.info("Viajes actualizados: " + str(len(sujetos_viajes_finalizados)))
 
