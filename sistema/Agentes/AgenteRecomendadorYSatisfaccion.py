@@ -8,12 +8,14 @@ Agente que recomienda viajes y recoge valoraciones
 
 @author: daniel
 """
-from datetime import datetime as time_converter
+
+import time
 from multiprocessing import Process
 import logging
 import argparse
 from flask import Flask, render_template, request
 from rdflib.namespace import FOAF, RDF
+from datetime import datetime, timedelta
 
 from multiprocessing import Process, Queue
 import logging
@@ -24,7 +26,7 @@ from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
 from AgentUtil.FlaskServer import shutdown_server
-from AgentUtil.ACLMessages import build_message, send_message, getAgentInfo, get_message_properties
+from AgentUtil.ACLMessages import build_message, send_message, getAgentInfo, get_message_properties, clean_graph
 from AgentUtil.Agent import Agent
 from AgentUtil.Logging import config_logger
 from AgentUtil.DSO import DSO
@@ -109,8 +111,12 @@ AgenteDirectorio = Agent('AgenteDirectorio',
 
 # Global satisfaccionDB y viajesFinalizadosDB triplestore
 satisfaccionDB = Graph()
+satisfaccionDB.bind('ECSDI', ECSDI)
+satisfaccionDB.bind('RDF', RDF)
 
 viajesFinalizadosDB = Graph()
+viajesFinalizadosDB.bind('ECSDI', ECSDI)
+viajesFinalizadosDB.bind('RDF', RDF)
 # Cola de comunicacion entre procesos
 cola1 = Queue()
 
@@ -142,6 +148,70 @@ def guardarViajesFinalizados(sujeto, gm):
 
     viajesFinalizadosDB.serialize(format='turtle')
     return Graph() # TODO: Devolver algo
+
+
+def recomendarActividadesUsuario(grado_ludica, grado_cultural, grado_festivo, fecha_ida, fecha_vuelta):
+    g_actividades = Graph()
+
+    agenteProveedorActividades = getAgentInfo(DSO.AgenteProveedorActividades, AgenteDirectorio,
+                                              AgenteRecomendadorYSatisfaccion, getMessageCount())
+
+    gmess = Graph()
+    IAA = Namespace('IAActions')
+    gmess.bind('foaf', FOAF)
+    gmess.bind('iaa', IAA)
+    gmess.bind('ECSDI', ECSDI)
+    sujeto = agn['PeticiónIntervaloDeActividades-' + str(getMessageCount())]
+    gmess.add((sujeto, RDF.type, ECSDI.IntervaloDeActividades))
+    gmess.add((sujeto, ECSDI.DiaDePartida, Literal(fecha_ida, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(fecha_vuelta, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.grado_ludica, Literal(grado_ludica, datatype=XSD.integer)))
+    gmess.add((sujeto, ECSDI.grado_cultural, Literal(grado_cultural, datatype=XSD.integer)))
+    gmess.add((sujeto, ECSDI.grado_festiva, Literal(grado_festivo, datatype=XSD.integer)))
+
+    msg = build_message(gmess, perf=ACL.request,
+                        sender=AgenteRecomendadorYSatisfaccion.uri,
+                        receiver=agenteProveedorActividades.uri,
+                        msgcnt=getMessageCount(),
+                        content=sujeto)
+
+    gr = send_message(msg, agenteProveedorActividades.address)
+    g_actividades = clean_graph(gr)
+
+    logger.info(g_actividades.serialize(format='turtle'))
+
+def enviar_recomendaciones():
+    global satisfaccionDB
+
+    logger.info('ESTADO BASE DE DATOS SATISFACCION')
+    logger.info(satisfaccionDB.serialize(format='turtle'))
+    
+    query = f"""
+        SELECT ?usuario ?gusto_ludica ?gusto_cultural ?gusto_festivo
+        WHERE {{
+            ?usuario ECSDI:gusto_actividades_ludicas ?gusto_ludica ;
+                     ECSDI:gusto_actividades_culturales ?gusto_cultural ;
+                     ECSDI:gusto_actividades_festivas ?gusto_festivo .
+        }}
+        """
+
+    logger.info(query)
+
+    resultsQuery = satisfaccionDB.query(
+        query,
+        initNs={'ECSDI': ECSDI, 'RDF': RDF})
+
+    logger.info('Se van a hacer ' + str(len(resultsQuery)) + ' recomendaciones')
+
+    for result in resultsQuery:
+        grado_ludica = result['gusto_ludica']
+        grado_cultural = result['gusto_cultural']
+        grado_festivo = result['gusto_festivo']
+
+        fechaIda = (datetime.today() + timedelta(days=30)).isoformat()
+        fechaVuelta = (datetime.today() + timedelta(days=37)).isoformat()
+        recomendarActividadesUsuario(grado_ludica, grado_cultural, grado_festivo, fechaIda, fechaVuelta)
+        logger.info('Recomendacion enviada a' + result['usuario'])
 
 def obtener_viaje_no_valorado_usuario(usuario):
     global viajesFinalizadosDB
@@ -246,17 +316,19 @@ def browser_iface_encuesta_satisfaccion_finalizada():
 
         logger.info("En la BD habia " + str(len(resultsQuery)) + " resultados")
 
-        if len(resultsQuery) != 0:
+        if len(resultsQuery) == 0:
+            satisfaccionDB.add((ECSDI[usuario], RDF.type, ECSDI.Usuario))
+        else:
             for row in resultsQuery:
-                regsitro_gusto_actividades_ludicas = row['gusto_ludica']
+                registro_gusto_actividades_ludicas = row['gusto_ludica']
                 registro_gusto_actividades_culturales = row['gusto_cultural']
                 registro_gusto_actividades_festivas = row['gusto_festivo']
 
-                print('Registro gusto ludica: ' + str(regsitro_gusto_actividades_ludicas))
+                print('Registro gusto ludica: ' + str(registro_gusto_actividades_ludicas))
                 print('Registro gusto cultural: ' + str(registro_gusto_actividades_culturales))
                 print('Registro gusto festivo: ' + str(registro_gusto_actividades_festivas))
 
-                nuevo_gusto_actividades_ludicas = max(0, min(3, media(nuevo_gusto_actividades_ludicas, int(regsitro_gusto_actividades_ludicas))))
+                nuevo_gusto_actividades_ludicas = max(0, min(3, media(nuevo_gusto_actividades_ludicas, int(registro_gusto_actividades_ludicas))))
                 nuevo_gusto_actividades_culturales = max(0, min(3, media(nuevo_gusto_actividades_culturales, int(registro_gusto_actividades_culturales))))
                 nuevo_gusto_actividades_festivas = max(0, min(3, media(nuevo_gusto_actividades_festivas, int(registro_gusto_actividades_festivas))))
 
@@ -377,36 +449,6 @@ def comunicacion():
     return gr.serialize(format='xml')
 
 
-def tidyup():
-    """
-    Acciones previas a parar el agente
-
-    """
-    global cola1
-    cola1.put(0)
-
-
-def agentbehavior1(cola):
-    """
-    Un comportamiento del agente
-
-    :return:
-    """
-    # Registramos el agente
-    gr = register_message()
-
-    # Escuchando la cola hasta que llegue un 0
-    fin = False
-    while not fin:
-        while cola.empty():
-            pass
-        v = cola.get()
-        if v == 0:
-            fin = True
-        else:
-            print(v)
-
-
 def inicializarViajesFinalizadosDataTesing():
     global viajesFinalizadosDB
 
@@ -448,11 +490,52 @@ def inicializarViajesFinalizadosDataTesing():
 
     logger.info(viajesFinalizadosDB.serialize(format='turtle'))
 
+def tidyup():
+    """
+    Acciones previas a parar el agente
+
+    """
+    global cola1
+    cola1.put(0)
+
+
+def agentbehavior1(cola):
+    """
+    Un comportamiento del agente
+
+    :return:
+    """
+    # Registramos el agente
+    gr = register_message()
+
+    # Escuchando la cola hasta que llegue un 0
+    fin = False
+    while not fin:
+        while cola.empty():
+            pass
+        v = cola.get()
+        if v == 0:
+            fin = True
+        else:
+            print(v)
+
+def agentbehavior2():
+    interval = 30  # Trigger the process every 10 seconds
+    try:
+        while True:
+            enviar_recomendaciones()
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        print("Agent behavior 1 interrupted by KeyboardInterrupt")
+
 if __name__ == '__main__':
     inicializarViajesFinalizadosDataTesing() # TODO data para testing
     # Ponemos en marcha los behaviors
     ab1 = Process(target=agentbehavior1, args=(cola1,))
     ab1.start()
+
+    ab2 = Process(target=agentbehavior2, args=())
+    ab2.start()
 
     # Ponemos en marcha el servidor
     app.run(host=hostname, port=port)
