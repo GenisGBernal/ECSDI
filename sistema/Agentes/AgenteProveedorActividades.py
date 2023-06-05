@@ -38,8 +38,8 @@ from amadeus import Client, ResponseError
 
 __author__ = 'javier'
 
-AMADEUS_KEY = '8zfjCOSbBMc4MgaOkibZ4ydWXxR4mljG'
-AMADEUS_SECRET = 'yGTFfTOPGHNzIIZe'
+AMADEUS_KEY = 'EiHVAHxxhgGwlEPZTZ4flG42U1x5QvMI'
+AMADEUS_SECRET = 'n32zEDo4N2CAAtLB'
 
 amadeus = Client(
     client_id=AMADEUS_KEY,
@@ -172,19 +172,35 @@ def repartir_actividades(grado_ludica, grado_cultural, grado_festivo, n_activida
     return int(n_actividades_ludicas), int(n_actividades_culturales), int(n_actividades_festivas)
 
 
-def obtener_actividad(tipo_actividad):
+def obtener_actividad(tipo_actividad, lugar_llegada="BCN"):
+    latitude = None
+    longitude = None
+    if lugar_llegada == 'LON':
+        latitude = 51.516089
+        longitude = -0.123917
+    else:
+        latitude = 41.397896
+        longitude = 2.165111
 
     global actividadesDB
 
     sujetos_actividades = list(actividadesDB.query("""
         SELECT DISTINCT ?sujeto
         WHERE {
-            ?sujeto ECSDI:tipo_actividad ?tipo .
-            FILTER (?tipo = ?var)
+            ?sujeto ECSDI:tipo_actividad ?tipo ;
+            ECSDI:latitude ?latitude ;
+            ECSDI:longitude ?longitude .
+            FILTER (?tipo = ?var1
+                && ?latitude = ?var2
+                && ?longitude = ?var3)
         }
     """, 
     initNs = {'ECSDI': ECSDI},
-    initBindings={'var': tipo_actividad}
+    initBindings={
+        'var1': tipo_actividad,
+        'var2': Literal(latitude, datatype=XSD.float),
+        'var3': Literal(longitude, datatype=XSD.float),
+        }
     ))
 
     sujeto = None
@@ -196,35 +212,41 @@ def obtener_actividad(tipo_actividad):
     else:
         logger.info('Busqueda en amadeus de actividad tipo: ' + tipo_actividad)
         if tipo_actividad == ECSDI.tipo_festiva:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=7, categories="NIGHTLIFE", page=70)
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=latitude, longitude=longitude, radius=7, categories="NIGHTLIFE", page=70)
             sujeto = ECSDI['actividad/festiva/'+random.choice(response.data)['id']]
             for r in response.data:
                 actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], RDF.type, ECSDI.actividad))
                 actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.tipo_actividad, ECSDI.tipo_festiva))
                 actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.subtipo_actividad, Literal(r['subType'], datatype=XSD.string)))
                 actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.nombre_actividad, Literal(r['name'], datatype=XSD.string)))
+                actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.latitude, Literal(latitude, datatype=XSD.float)))
+                actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.longitude, Literal(longitude, datatype=XSD.float)))
                 for tag in r['tags']:
                     actividadesDB.add((ECSDI['actividad/festiva/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
 
         elif tipo_actividad == ECSDI.tipo_ludica:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=7, categories="SHOPPING", page=70)
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=latitude, longitude=longitude, radius=7, categories="SHOPPING", page=70)
             sujeto = ECSDI['actividad/ludica/'+random.choice(response.data)['id']]
             for r in response.data:
                 actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], RDF.type, ECSDI.actividad))
                 actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.tipo_actividad, ECSDI.tipo_ludica))
                 actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.subtipo_actividad, Literal(r['subType'], datatype=XSD.string)))
                 actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.nombre_actividad, Literal(r['name'], datatype=XSD.string)))
+                actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.latitude, Literal(latitude, datatype=XSD.float)))
+                actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.longitude, Literal(longitude, datatype=XSD.float)))
                 for tag in r['tags']:
                     actividadesDB.add((ECSDI['actividad/ludica/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
 
         elif tipo_actividad == ECSDI.tipo_cultural:
-            response = amadeus.reference_data.locations.points_of_interest.get(latitude=41.397896, longitude=2.165111, radius=7, categories="SIGHTS", page=70)
+            response = amadeus.reference_data.locations.points_of_interest.get(latitude=latitude, longitude=longitude, radius=7, categories="SIGHTS", page=70)
             sujeto = ECSDI['actividad/cultural/'+random.choice(response.data)['id']]
             for r in response.data:
                 actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], RDF.type, ECSDI.actividad))
                 actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.tipo_actividad, ECSDI.tipo_cultural))
                 actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.subtipo_actividad, Literal(r['subType'], datatype=XSD.string)))
                 actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.nombre_actividad, Literal(r['name'], datatype=XSD.string)))
+                actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.latitude, Literal(latitude, datatype=XSD.float)))
+                actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.longitude, Literal(longitude, datatype=XSD.float)))
                 for tag in r['tags']:
                     actividadesDB.add((ECSDI['actividad/cultural/'+r['id']], ECSDI.tag_actividad, Literal(tag, datatype=XSD.string)))
         
@@ -243,7 +265,7 @@ def obtener_actividad(tipo_actividad):
     return gr
 
 
-def obtener_actividades_un_dia(sujeto_viaje, dia, tipo_actividad_manana, tipo_actividad_tarde, tipo_actividad_noche):
+def obtener_actividades_un_dia(sujeto_viaje, dia, lugar_llegada, tipo_actividad_manana, tipo_actividad_tarde, tipo_actividad_noche):
 
     gr = Graph()
     IAA = Namespace('IAActions')
@@ -255,15 +277,15 @@ def obtener_actividades_un_dia(sujeto_viaje, dia, tipo_actividad_manana, tipo_ac
     gr.add((sujeto, RDF.type, ECSDI.actividades_ordenadas))
     gr.add((sujeto, ECSDI.dia, Literal(dia, datatype=XSD.string)))
 
-    gr_actividad_de_manana = obtener_actividad(tipo_actividad=tipo_actividad_manana)
+    gr_actividad_de_manana = obtener_actividad(tipo_actividad=tipo_actividad_manana, lugar_llegada=lugar_llegada)
     sujeto_actividad_de_manana = gr_actividad_de_manana.value(predicate=RDF.type, object=ECSDI.actividad)
     gr.add((sujeto, ECSDI.actividad_manana, sujeto_actividad_de_manana))
 
-    gr_actividad_de_tarde = obtener_actividad(tipo_actividad=tipo_actividad_tarde)
+    gr_actividad_de_tarde = obtener_actividad(tipo_actividad=tipo_actividad_tarde, lugar_llegada=lugar_llegada)
     sujeto_actividad_de_tarde = gr_actividad_de_tarde.value(predicate=RDF.type, object=ECSDI.actividad)
     gr.add((sujeto, ECSDI.actividad_tarde, sujeto_actividad_de_tarde))
 
-    gr_actividad_de_noche = obtener_actividad(tipo_actividad=tipo_actividad_noche)
+    gr_actividad_de_noche = obtener_actividad(tipo_actividad=tipo_actividad_noche, lugar_llegada=lugar_llegada)
     sujeto_actividad_de_noche = gr_actividad_de_noche.value(predicate=RDF.type, object=ECSDI.actividad)
     gr.add((sujeto, ECSDI.actividad_noche, sujeto_actividad_de_noche))
 
@@ -277,6 +299,7 @@ def obtener_intervalo_actividades(sujeto, gm):
     grado_ludica = gm.value(subject=sujeto, predicate=ECSDI.grado_ludica).toPython()
     grado_cultural = gm.value(subject=sujeto, predicate=ECSDI.grado_cultural).toPython()
     grado_festivo = gm.value(subject=sujeto, predicate=ECSDI.grado_festiva).toPython()
+    lugar_llegada = gm.value(subject=sujeto, predicate=ECSDI.LugarDeLlegada).toPython()
 
     logger.info("Fecha llegada: " + fecha_llegada)
     logger.info("Fecha salida: " + fecha_salida)
@@ -313,6 +336,7 @@ def obtener_intervalo_actividades(sujeto, gm):
         gr += obtener_actividades_un_dia(
             sujeto_viaje = sujeto,
             dia = string_a_fecha(fecha_llegada) + datetime.timedelta(days=i),
+            lugar_llegada = lugar_llegada,
             tipo_actividad_manana= tipo_actividades[i*3],
             tipo_actividad_tarde= tipo_actividades[i*3+1], 
             tipo_actividad_noche= tipo_actividades[i*3+2])
@@ -395,7 +419,9 @@ def comunicacion():
                 
                 elif accion == ECSDI.ActividadCubierta:
                     logger.info('Peticion de actividad cubierta')
-                    gr = obtener_actividad(ECSDI.tipo_ludica)
+                    lugar_llegada = gm.value(subject=sujeto, predicate=ECSDI.LugarDeLlegada).toPython()
+                    print("Codigo lugar:" + lugar_llegada)
+                    gr = obtener_actividad(ECSDI.tipo_ludica, lugar_llegada)
                     gr = build_message(gr, ACL['inform'], 
                                        sender=AgenteProveedorActividades.uri, 
                                        msgcnt=getMessageCount())

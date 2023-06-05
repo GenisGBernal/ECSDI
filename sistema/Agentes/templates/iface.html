@@ -12,6 +12,13 @@
 <form method="post" action="/iface">
     <p><label>Usuario:</label> <input type="text" name="Usuario" required></p>
     <p><label>Lugar de salida</label> <input type="text" name="LugarDePartida" required></p>
+    <P><label for="destinaciones">Destinación:</label>
+        <select id="destinaciones" name="destinacion" required>
+         <option value="" disabled selected></option>
+          <option value="BCN">Barcelona</option>
+          <option value="LON">Londres</option>
+        </select>
+    </P>
     <p><label>Dia salida:</label> <input type="date" name="DiaDePartida" required></p>
     <p><label>Dia llegada:</label> <input type="date" name="DiaDeRetorno" required></p>
 

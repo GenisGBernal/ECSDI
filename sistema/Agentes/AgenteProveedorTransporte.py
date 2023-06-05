@@ -153,10 +153,10 @@ def inicializaVueloNulo(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
     transporteDB.add((ECSDI[identificador], ECSDI.identificador, Literal(flight_id, datatype=XSD.string)))
     transporteDB.add((ECSDI[identificador], ECSDI.precio, Literal(flight_price, datatype=XSD.float)))
     transporteDB.add((ECSDI[identificador], ECSDI.viaje_transporte, transporte))
-    transporteDB.add((ECSDI[identificador], ECSDI.LugarDePartida, Literal(lugar_partida, datatype=XSD.string)))
-    transporteDB.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
-    transporteDB.add((ECSDI[identificador], ECSDI.DiaDePartida, Literal(dia_partida, datatype=XSD.string)))
-    transporteDB.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
+    transporteDB.add((ECSDI[identificador], ECSDI.LugarVueloDePartida, Literal(lugar_partida, datatype=XSD.string)))
+    transporteDB.add((ECSDI[identificador], ECSDI.LugarVueloDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
+    transporteDB.add((ECSDI[identificador], ECSDI.DiaVueloDePartida, Literal(dia_partida, datatype=XSD.string)))
+    transporteDB.add((ECSDI[identificador], ECSDI.DiaVueloDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
 
 
 def obtener_transporte(sujeto, gm):
@@ -202,10 +202,10 @@ def fetch_queried_data(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
             ?billete ECSDI:viaje_transporte ?viaje_transporte_param ;
                      ECSDI:identificador ?identificador ;
                      ECSDI:precio ?precio ;
-                     ECSDI:DiaDePartida ?dia_partida_param ;
-                     ECSDI:DiaDeRetorno ?dia_retorno_param ;
-                     ECSDI:LugarDePartida ?lugar_partida_param ;
-                     ECSDI:LugarDeLlegada ?lugar_llegada_param .
+                     ECSDI:DiaVueloDePartida ?dia_partida_param ;
+                     ECSDI:DiaVueloDeRetorno ?dia_retorno_param ;
+                     ECSDI:LugarVueloDePartida ?lugar_partida_param ;
+                     ECSDI:LugarVueloDeLlegada ?lugar_llegada_param .
             FILTER (?viaje_transporte_param = <{transporte}>
                     && ?dia_partida_param = "{dia_partida}"
                     && ?dia_retorno_param = "{dia_retorno}"
@@ -233,10 +233,10 @@ def fetch_queried_data(dia_partida, dia_retorno, lugar_partida, lugar_llegada):
         gr.add((ECSDI[identificador], ECSDI.identificador, Literal(identificador, datatype=XSD.string)))
         gr.add((ECSDI[identificador], ECSDI.viaje_transporte, transporte))
         gr.add((ECSDI[identificador], ECSDI.precio, Literal(precio, datatype=XSD.float)))
-        gr.add((ECSDI[identificador], ECSDI.LugarDePartida, Literal(lugar_partida, datatype=XSD.string)))
-        gr.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
-        gr.add((ECSDI[identificador], ECSDI.DiaDePartida, Literal(dia_partida, datatype=XSD.string)))
-        gr.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.LugarVueloDePartida, Literal(lugar_partida, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.LugarVueloDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.DiaVueloDePartida, Literal(dia_partida, datatype=XSD.string)))
+        gr.add((ECSDI[identificador], ECSDI.DiaVueloDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
 
     logger.info(gr.serialize(format='turtle'))
     logger.info("salimos de FETCH_QUEIRED_DATA---------------------------")
@@ -282,10 +282,10 @@ def remote_transporte_search(dia_partida, dia_retorno, lugar_partida, lugar_lleg
             transporteDB.add((ECSDI[identificador], ECSDI.identificador, Literal(flight_id, datatype=XSD.string)))
             transporteDB.add((ECSDI[identificador], ECSDI.precio, Literal(flight_price, datatype=XSD.float)))
             transporteDB.add((ECSDI[identificador], ECSDI.viaje_transporte, transporte))
-            transporteDB.add((ECSDI[identificador], ECSDI.LugarDePartida, Literal(lugar_partida, datatype=XSD.string)))
-            transporteDB.add((ECSDI[identificador], ECSDI.LugarDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
-            transporteDB.add((ECSDI[identificador], ECSDI.DiaDePartida, Literal(dia_partida, datatype=XSD.string)))
-            transporteDB.add((ECSDI[identificador], ECSDI.DiaDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
+            transporteDB.add((ECSDI[identificador], ECSDI.LugarVueloDePartida, Literal(lugar_partida, datatype=XSD.string)))
+            transporteDB.add((ECSDI[identificador], ECSDI.LugarVueloDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
+            transporteDB.add((ECSDI[identificador], ECSDI.DiaVueloDePartida, Literal(dia_partida, datatype=XSD.string)))
+            transporteDB.add((ECSDI[identificador], ECSDI.DiaVueloDeRetorno, Literal(dia_retorno, datatype=XSD.string)))
 
     logger.info(transporteDB.serialize(format='turtle'))
 

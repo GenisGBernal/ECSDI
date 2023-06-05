@@ -146,10 +146,10 @@ def obtener_info_transporte(grafo_viaje):
             ?billete ECSDI:viaje_transporte ?viaje_transporte_param ;
                      ECSDI:identificador ?identificador ;
                      ECSDI:precio ?precio ;
-                     ECSDI:DiaDePartida ?dia_partida ;
-                     ECSDI:DiaDeRetorno ?dia_retorno ;
-                     ECSDI:LugarDePartida ?lugar_partida ;
-                     ECSDI:LugarDeLlegada ?lugar_llegada .
+                     ECSDI:DiaVueloDePartida ?dia_partida ;
+                     ECSDI:DiaVueloDeRetorno ?dia_retorno ;
+                     ECSDI:LugarVueloDePartida ?lugar_partida ;
+                     ECSDI:LugarVueloDeLlegada ?lugar_llegada .
                 FILTER (?viaje_transporte_param = <{transporte}>)
             }}
             LIMIT 1
@@ -218,11 +218,9 @@ def obten_precio_total(grafo_viaje):
     return precio_total
 
 
-def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, grado_ludica, grado_cultural, grado_festivo):
+def generar_peticion_de_viaje(usuario, lugarDePartida, destinacion, diaPartida, diaRetorno, grado_ludica, grado_cultural, grado_festivo):
 
     agentePlanificador = getAgentInfo(DSO.AgentePlanificador, DirectoryAgent, AgenteContratador, getMessageCount())
-
-    lugarDeLlegada = 'BCN'
 
     gmess = Graph()
     IAA = Namespace('IAActions')
@@ -233,7 +231,7 @@ def generar_peticion_de_viaje(usuario, lugarDePartida, diaPartida, diaRetorno, g
     gmess.add((sujeto, RDF.type, ECSDI.PeticionDeViaje))
     gmess.add((sujeto, ECSDI.Usuario, Literal(usuario, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.LugarDePartida, Literal(lugarDePartida, datatype=XSD.string)))
-    gmess.add((sujeto, ECSDI.LugarDeLlegada, Literal(lugarDeLlegada, datatype=XSD.string)))
+    gmess.add((sujeto, ECSDI.LugarDeLlegada, Literal(destinacion, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.DiaDePartida, Literal(diaPartida, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(diaRetorno, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.grado_ludica, Literal(grado_ludica, datatype=XSD.integer)))
@@ -361,11 +359,15 @@ def browser_iface():
     else:
         usuario = request.form['Usuario']
         lugarDePartida = request.form['LugarDePartida']
+        destinacion = request.form['destinacion']
         diaPartida = request.form['DiaDePartida']
         diaRetorno = request.form['DiaDeRetorno']
         grado_ludica = request.form['grado_ludica']
         grado_cultural = request.form['grado_cultural']
         grado_festivo = request.form['grado_festivo']
+
+        if len(lugarDePartida) != 3 or not lugarDePartida.isupper():
+            return render_template('iface.html', error_message='El lugar de salida debe ser el código IATA de un aeropuerto, como: LHR, TXL, CDG, FCO, YYZ, SYD, PEK, GRU, EZE...')
 
         if diaRetorno < diaPartida:
             return render_template('iface.html', error_message='La fecha de retorno no puede ser anterior a la de salida')
@@ -378,6 +380,7 @@ def browser_iface():
         gr = generar_peticion_de_viaje(
             usuario=usuario,
             lugarDePartida=lugarDePartida,
+            destinacion=destinacion,
             diaPartida=diaPartida,
             diaRetorno=diaRetorno,
             grado_ludica=grado_ludica,

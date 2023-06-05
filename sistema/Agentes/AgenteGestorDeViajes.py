@@ -17,7 +17,7 @@ import multiprocessing
 import datetime
 
 from flask import Flask, request, render_template
-from rdflib import Graph, Namespace, Literal, XSD
+from rdflib import Graph, Namespace, Literal, XSD, URIRef
 from rdflib.namespace import FOAF, RDF
 
 from AgentUtil.ACL import ACL
@@ -150,7 +150,7 @@ def browser_iface():
         return render_template('ver_cambios_viaje.html', registro_cambios_viaje=registroCambiosViaje)
     
 
-def obtener_actividad_cubierta():
+def obtener_actividad_cubierta(lugar_llegada):
 
     agenteProveedorActividades = getAgentInfo(DSO.AgenteProveedorActividades, AgenteDirectorio, AgenteGestorDeViajes, getMessageCount())
 
@@ -161,6 +161,7 @@ def obtener_actividad_cubierta():
     gmess.bind('ECSDI', ECSDI)
     sujeto = agn['PeticiónDeActividadCubierta-' + str(getMessageCount())]
     gmess.add((sujeto, RDF.type, ECSDI.ActividadCubierta))
+    gmess.add((sujeto, ECSDI.LugarDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
 
     msg = build_message(gmess, perf=ACL.request,
                         sender=AgenteGestorDeViajes.uri,
@@ -196,8 +197,13 @@ def cambiar_actividad(sujeto_actividades_hoy, franja):
         tipo_antigua_actividad = viajesConfirmadosDB.value(subject=sujeto_actividad_franja, predicate=ECSDI.tipo_actividad)
         subtipo_antigua_actividad = viajesConfirmadosDB.value(subject=sujeto_actividad_franja, predicate=ECSDI.subtipo_actividad).toPython()
         nombre_antigua_actividad = viajesConfirmadosDB.value(subject=sujeto_actividad_franja, predicate=ECSDI.nombre_actividad).toPython()
+        
+        sujeto_conjunto_actividades = viajesConfirmadosDB.value(predicate=ECSDI.ActividadesOrdenadas, object=sujeto_actividades_hoy)
+        sujeto_viaje = viajesConfirmadosDB.value(predicate=ECSDI.ViajeActividades, object=sujeto_conjunto_actividades)
+        lugar_llegada = viajesConfirmadosDB.value(subject=sujeto_viaje, predicate=ECSDI.LugarDeLlegada).toPython()
+        print("Codigo lugar:" + lugar_llegada)
 
-        nueva_actividad = obtener_actividad_cubierta()
+        nueva_actividad = obtener_actividad_cubierta(lugar_llegada)
         sujeto_nueva_actividad = nueva_actividad.value(predicate=RDF.type, object=ECSDI.actividad)
        
         tipo_nueva_actividad = nueva_actividad.value(subject=sujeto_nueva_actividad, predicate=ECSDI.tipo_actividad)
@@ -352,6 +358,20 @@ def tidyup():
     cola1.put(0)
 
 
+def traverse_graph(sujeto_principal, gmess):
+    global viajesConfirmadosDB
+
+    tripletas_relacionadas = list(viajesConfirmadosDB.triples((sujeto_principal, None, None)))
+
+    for tripleta in tripletas_relacionadas:
+        gmess.add(tripleta)
+        viajesConfirmadosDB.remove(tripleta)
+
+        objeto = tripleta[2]
+        if isinstance(objeto, URIRef):
+            traverse_graph(objeto, gmess)
+
+
 def actualizar_estado_viajes_finalizados():
 
     global viajesConfirmadosDB
@@ -380,16 +400,22 @@ def actualizar_estado_viajes_finalizados():
         gmess.bind('foaf', FOAF)
         gmess.bind('iaa', IAA)
         gmess.bind('ECSDI', ECSDI)
+        sujeto = ECSDI['ViajesFinalizados-' + str(getMessageCount())]
+        gmess.add((sujeto, RDF.type, ECSDI.viaje_finalizado))
+
+        print("antes")
+        print(viajesConfirmadosDB.serialize(format="turtle"))
 
         for sujeto_viaje_finalizado in sujetos_viajes_finalizados:
-
-            for sujeto, predicado, objeto in viajesConfirmadosDB.triples((sujeto_viaje_finalizado, None, None)):
-                if (predicado == RDF.type):
-                    gmess.add((sujeto, RDF.type, ECSDI.ViajeFinalizado))
-                else:
-                    gmess.add((sujeto, predicado, objeto))
-            
-            viajesConfirmadosDB.remove((sujeto_viaje_finalizado, None, None))
+            traverse_graph(sujeto_viaje_finalizado[0], gmess)
+            gmess.remove((sujeto_viaje_finalizado[0], RDF.type, None))
+            gmess.add((sujeto_viaje_finalizado[0], RDF.type, ECSDI.ViajeFinalizado))
+        
+        print("despues")
+        print(viajesConfirmadosDB.serialize(format="turtle"))
+        print("respuesta")
+        print(gmess.serialize(format="turtle"))
+        
 
         # msg = build_message(gmess, perf=ACL.request,
         #             sender=AgenteGestorDeViajes.uri,

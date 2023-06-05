@@ -202,10 +202,8 @@ def obtener_transporte_optimo(g_transportes):
     logger.info("Acabamos OBTENER_TRANSPORTE_OPTIMO----------------------")
     return viaje_elegido
 
-def obtener_transporte(p_salida, lugar_partida, dia_partida, dia_retorno):
+def obtener_transporte(p_salida, lugar_partida, lugar_llegada, dia_partida, dia_retorno):
     logger.info("Entro en OBTENER_TRANSPORTE-----------------------------------------------")
-
-    lugar_llegada = 'BCN'
 
     global g_transportes
 
@@ -242,7 +240,7 @@ def obtener_transporte(p_salida, lugar_partida, dia_partida, dia_retorno):
     p_salida.send(g_transporte.serialize(format='xml'))
     p_salida.close()
 
-def obtener_actividades(p_salida, fecha_llegada, fecha_salida, grado_ludica, grado_cultural, grado_festivo):
+def obtener_actividades(p_salida, lugar_llegada, fecha_llegada, fecha_salida, grado_ludica, grado_cultural, grado_festivo):
 
     global g_actividades
     
@@ -260,6 +258,7 @@ def obtener_actividades(p_salida, fecha_llegada, fecha_salida, grado_ludica, gra
     gmess.add((sujeto, ECSDI.grado_ludica, Literal(grado_ludica, datatype=XSD.integer)))
     gmess.add((sujeto, ECSDI.grado_cultural, Literal(grado_cultural, datatype=XSD.integer)))
     gmess.add((sujeto, ECSDI.grado_festiva, Literal(grado_festivo, datatype=XSD.integer)))
+    gmess.add((sujeto, ECSDI.LugarDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
 
     msg = build_message(gmess, perf=ACL.request,
                         sender=AgentePlanificador.uri,
@@ -278,6 +277,7 @@ def planificar_viaje(sujeto, gm):
 
     
     lugar_salida = gm.value(subject=sujeto, predicate=ECSDI.LugarDePartida).toPython()
+    lugar_llegada = gm.value(subject=sujeto, predicate=ECSDI.LugarDeLlegada).toPython()
     usuario = gm.value(subject=sujeto, predicate=ECSDI.Usuario).toPython()
     fecha_llegada = gm.value(subject=sujeto, predicate=ECSDI.DiaDePartida).toPython()
     fecha_salida = gm.value(subject=sujeto, predicate=ECSDI.DiaDeRetorno).toPython()
@@ -295,18 +295,15 @@ def planificar_viaje(sujeto, gm):
 
 
     p_actividades_salida, p_actividades_entrada = Pipe()
-    p1 = Process(target=obtener_actividades, args=(p_actividades_entrada, fecha_llegada,fecha_salida,grado_ludica,grado_cultural,grado_festivo))
+    p1 = Process(target=obtener_actividades, args=(p_actividades_entrada, lugar_llegada, fecha_llegada,fecha_salida,grado_ludica,grado_cultural,grado_festivo))
     p1.start()
 
-    # p2 =
-    # p2.start() def obtener_hospedaje(p_salida, primerDia, últimoDia, cityCode):
-    cityCode = "LON"
     p_hospedaje_salida, p_hospedaje_entrada = Pipe()
-    p2 = Process(target=obtener_hospedaje, args=(p_hospedaje_entrada, fecha_llegada, fecha_salida, cityCode))
+    p2 = Process(target=obtener_hospedaje, args=(p_hospedaje_entrada, fecha_llegada, fecha_salida, lugar_llegada))
     p2.start()
 
     p_transportes_salida, p_transportes_entrada = Pipe()
-    p3 = Process(target=obtener_transporte, args=(p_transportes_entrada, lugar_salida, fecha_llegada, fecha_salida))
+    p3 = Process(target=obtener_transporte, args=(p_transportes_entrada, lugar_salida, lugar_llegada, fecha_llegada, fecha_salida))
     p3.start()
 
     g_actividades = Graph()
@@ -335,6 +332,8 @@ def planificar_viaje(sujeto, gm):
     gmess.add((sujeto, ECSDI.DiaDePartida, Literal(fecha_llegada, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.DiaDeRetorno, Literal(fecha_salida, datatype=XSD.string)))
     gmess.add((sujeto, ECSDI.ViajeActividades, sujeto_actividades))
+    gmess.add((sujeto, ECSDI.LugarDeLlegada, Literal(lugar_llegada, datatype=XSD.string)))
+
 
 
     gmess += g_actividades
