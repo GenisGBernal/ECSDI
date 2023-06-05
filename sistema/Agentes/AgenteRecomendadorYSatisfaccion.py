@@ -8,9 +8,9 @@ Agente que recomienda viajes y recoge valoraciones
 
 @author: daniel
 """
-
+import os
 import time
-from multiprocessing import Process
+from multiprocessing import Process, Pipe
 import logging
 import argparse
 from flask import Flask, render_template, request
@@ -109,6 +109,11 @@ AgenteDirectorio = Agent('AgenteDirectorio',
                          'http://%s:%d/Register' % (dhostname, dport),
                          'http://%s:%d/Stop' % (dhostname, dport))
 
+file_path_satisfaccion = "./.ecsdi/satisfaccionDB.rdf"
+file_path_viajes_recomendaciones_ini = "./.ecsdi/recomendaciones/.ini.rdf"
+file_path_viajes_recomendaciones = "./.ecsdi/recomendaciones/"
+
+
 # Global satisfaccionDB y viajesFinalizadosDB triplestore
 satisfaccionDB = Graph()
 satisfaccionDB.bind('ECSDI', ECSDI)
@@ -136,9 +141,11 @@ def register_message():
                        getMessageCount())
     return gr
 
+
 def media(a, b):
     media = (a + b) / 2
     return round(media)
+
 
 def guardarViajesFinalizados(sujeto, gm):
     for s, p, o in gm:
@@ -147,11 +154,15 @@ def guardarViajesFinalizados(sujeto, gm):
         viajesFinalizadosDB.add((s, p, o))
 
     viajesFinalizadosDB.serialize(format='turtle')
-    return Graph() # TODO: Devolver algo
+    return Graph()  # TODO: Devolver algo
 
 
-def recomendarActividadesUsuario(grado_ludica, grado_cultural, grado_festivo, fecha_ida, fecha_vuelta):
-    g_actividades = Graph()
+def recomendarActividadesUsuario(grado_ludica, grado_cultural, grado_festivo, fecha_ida, fecha_vuelta, usuario):
+    logger.info('Fecha ida: ' + fecha_ida)
+    logger.info('Fecha vuelta: ' + fecha_vuelta)
+    logger.info('Grado ludica: ' + str(grado_ludica))
+    logger.info('Grado cultural: ' + str(grado_cultural))
+    logger.info('Grado festivo: ' + str(grado_festivo))
 
     agenteProveedorActividades = getAgentInfo(DSO.AgenteProveedorActividades, AgenteDirectorio,
                                               AgenteRecomendadorYSatisfaccion, getMessageCount())
@@ -176,16 +187,25 @@ def recomendarActividadesUsuario(grado_ludica, grado_cultural, grado_festivo, fe
                         content=sujeto)
 
     gr = send_message(msg, agenteProveedorActividades.address)
+
     g_actividades = clean_graph(gr)
+
+    user_id = usuario.replace(ECSDI, "")
+    file_a_guardar = file_path_viajes_recomendaciones + user_id + ".rdf"
+
+    with open(file_a_guardar, "wb") as file:
+        g_actividades.serialize(destination=file, format='xml')
 
     logger.info(g_actividades.serialize(format='turtle'))
 
+
 def enviar_recomendaciones():
-    global satisfaccionDB
+    satisfaccionDB = Graph()
+    satisfaccionDB.parse(file_path_satisfaccion, format='xml')
 
     logger.info('ESTADO BASE DE DATOS SATISFACCION')
     logger.info(satisfaccionDB.serialize(format='turtle'))
-    
+
     query = f"""
         SELECT ?usuario ?gusto_ludica ?gusto_cultural ?gusto_festivo
         WHERE {{
@@ -207,11 +227,13 @@ def enviar_recomendaciones():
         grado_ludica = result['gusto_ludica']
         grado_cultural = result['gusto_cultural']
         grado_festivo = result['gusto_festivo']
+        usuario = result['usuario']
 
-        fechaIda = (datetime.today() + timedelta(days=30)).isoformat()
-        fechaVuelta = (datetime.today() + timedelta(days=37)).isoformat()
-        recomendarActividadesUsuario(grado_ludica, grado_cultural, grado_festivo, fechaIda, fechaVuelta)
-        logger.info('Recomendacion enviada a' + result['usuario'])
+        fecha_ida = (datetime.today() + timedelta(days=30)).strftime('%Y-%m-%d')
+        fecha_vuelta = (datetime.today() + timedelta(days=37)).strftime('%Y-%m-%d')
+        recomendarActividadesUsuario(grado_ludica, grado_cultural, grado_festivo, fecha_ida, fecha_vuelta, usuario)
+        logger.info('Recomendacion enviada a ' + result['usuario'])
+
 
 def obtener_viaje_no_valorado_usuario(usuario):
     global viajesFinalizadosDB
@@ -250,10 +272,10 @@ def obtener_viaje_no_valorado_usuario(usuario):
     for row in resultsQuery:
         id_viaje = row['viaje']
         viaje_a_valorar = {'viaje_id': id_viaje, 'Lugar de partida': row['lugarDePartida'],
-                       'Lugar de llegada': row['lugarDeLlegada'], 'Dia de partida': row['diaDePartida'],
-                       'Dia de retorno': row['diaDeRetorno'], 'Precio': row['precio_total'],
-                       'Grado ludica': row['grado_ludica'], 'Grado cultural': row['grado_cultural'],
-                       'Grado festivo': row['grado_festivo']}
+                           'Lugar de llegada': row['lugarDeLlegada'], 'Dia de partida': row['diaDePartida'],
+                           'Dia de retorno': row['diaDeRetorno'], 'Precio': row['precio_total'],
+                           'Grado ludica': row['grado_ludica'], 'Grado cultural': row['grado_cultural'],
+                           'Grado festivo': row['grado_festivo']}
 
         viajesFinalizadosDB.remove((id_viaje, ECSDI.viajeValorado, Literal(False, datatype=XSD.boolean)))
         viajesFinalizadosDB.add((id_viaje, ECSDI.viajeValorado, Literal(True, datatype=XSD.boolean)))
@@ -261,6 +283,7 @@ def obtener_viaje_no_valorado_usuario(usuario):
     logger.info(viajesFinalizadosDB.serialize(format='turtle'))
 
     return viaje_a_valorar
+
 
 @app.route("/encuesta_finalizada", methods=['GET', 'POST'])
 def browser_iface_encuesta_satisfaccion_finalizada():
@@ -328,9 +351,12 @@ def browser_iface_encuesta_satisfaccion_finalizada():
                 print('Registro gusto cultural: ' + str(registro_gusto_actividades_culturales))
                 print('Registro gusto festivo: ' + str(registro_gusto_actividades_festivas))
 
-                nuevo_gusto_actividades_ludicas = max(0, min(3, media(nuevo_gusto_actividades_ludicas, int(registro_gusto_actividades_ludicas))))
-                nuevo_gusto_actividades_culturales = max(0, min(3, media(nuevo_gusto_actividades_culturales, int(registro_gusto_actividades_culturales))))
-                nuevo_gusto_actividades_festivas = max(0, min(3, media(nuevo_gusto_actividades_festivas, int(registro_gusto_actividades_festivas))))
+                nuevo_gusto_actividades_ludicas = max(0, min(3, media(nuevo_gusto_actividades_ludicas,
+                                                                      int(registro_gusto_actividades_ludicas))))
+                nuevo_gusto_actividades_culturales = max(0, min(3, media(nuevo_gusto_actividades_culturales,
+                                                                         int(registro_gusto_actividades_culturales))))
+                nuevo_gusto_actividades_festivas = max(0, min(3, media(nuevo_gusto_actividades_festivas,
+                                                                       int(registro_gusto_actividades_festivas))))
 
                 satisfaccionDB.remove((ECSDI[usuario], ECSDI.gusto_actividades_ludicas, None))
                 satisfaccionDB.remove((ECSDI[usuario], ECSDI.gusto_actividades_culturales, None))
@@ -347,11 +373,12 @@ def browser_iface_encuesta_satisfaccion_finalizada():
         satisfaccionDB.add((ECSDI[usuario], ECSDI.gusto_actividades_festivas,
                             Literal(nuevo_gusto_actividades_festivas, datatype=XSD.integer)))
 
-        print("Estado BD de satisfaccion")
-
+        with open(file_path_satisfaccion, "wb") as file:
+            satisfaccionDB.serialize(destination=file, format='xml')
         logger.info(satisfaccionDB.serialize(format='turtle'))
 
-        return render_template('encuesta_satisfaccion_finalizada.html', usuario = usuario)
+        return render_template('encuesta_satisfaccion_finalizada.html', usuario=usuario)
+
 
 @app.route("/iface", methods=['GET', 'POST'])
 def browser_iface_encuesta_satisfaccion():
@@ -361,7 +388,7 @@ def browser_iface_encuesta_satisfaccion():
     """
 
     if request.method == 'GET':
-            return render_template('pedir_usuario.html')
+        return render_template('pedir_usuario.html')
     else:
         usuario = request.form['Usuario']
 
@@ -373,7 +400,8 @@ def browser_iface_encuesta_satisfaccion():
         if viaje_no_valorado_usuario is None:
             return render_template('no_hay mas_encuestas.html')
 
-        return render_template('encuesta_satisfaccion.html', viaje_no_valorado_usuario=viaje_no_valorado_usuario, usuario=usuario)
+        return render_template('encuesta_satisfaccion.html', viaje_no_valorado_usuario=viaje_no_valorado_usuario,
+                               usuario=usuario)
 
 
 @app.route("/stop")
@@ -386,6 +414,7 @@ def stop():
     tidyup()
     shutdown_server()
     return "Parando Servidor"
+
 
 @app.route("/comm")
 def comunicacion():
@@ -488,7 +517,9 @@ def inicializarViajesFinalizadosDataTesing():
     viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.grado_cultural, Literal(1, datatype=XSD.integer)))
     viajesFinalizadosDB.add((ECSDI['viaje3'], ECSDI.grado_festivo, Literal(2, datatype=XSD.integer)))
 
-    logger.info(viajesFinalizadosDB.serialize(format='turtle'))
+    logger.info(viajesFinalizadosDB.serialize(format='xml'))
+    viajesFinalizadosDB.serialize(destination=file_path_satisfaccion, format='xml')
+
 
 def tidyup():
     """
@@ -519,6 +550,7 @@ def agentbehavior1(cola):
         else:
             print(v)
 
+
 def agentbehavior2():
     interval = 30  # Trigger the process every 10 seconds
     try:
@@ -528,13 +560,16 @@ def agentbehavior2():
     except KeyboardInterrupt:
         print("Agent behavior 1 interrupted by KeyboardInterrupt")
 
+
 if __name__ == '__main__':
-    inicializarViajesFinalizadosDataTesing() # TODO data para testing
+    os.makedirs(os.path.dirname(file_path_satisfaccion), exist_ok=True)
+    os.makedirs(os.path.dirname(file_path_viajes_recomendaciones), exist_ok=True)
+    inicializarViajesFinalizadosDataTesing()  # TODO data para testing
     # Ponemos en marcha los behaviors
     ab1 = Process(target=agentbehavior1, args=(cola1,))
     ab1.start()
 
-    ab2 = Process(target=agentbehavior2, args=())
+    ab2 = Process(target=agentbehavior2)
     ab2.start()
 
     # Ponemos en marcha el servidor
@@ -542,4 +577,5 @@ if __name__ == '__main__':
 
     # Esperamos a que acaben los behaviors
     ab1.join()
+    ab2.join()
     logger.info('The End')
