@@ -554,7 +554,7 @@ def agentbehavior1(cola):
 
 
 def agentbehavior2():
-    interval = 30  # Trigger the process every 10 seconds
+    interval = 60*60*24  # Trigger the process every 10 seconds
     try:
         while True:
             enviar_recomendaciones()

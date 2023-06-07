@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF
+   xmlns:ECSDI="http://watafak.amigo/ontologies/ecsdi/"
+   xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+>
+  <rdf:Description rdf:about="http://watafak.amigo/ontologies/ecsdi/genis">
+    <RDF:type rdf:resource="http://watafak.amigo/ontologies/ecsdi/Usuario"/>
+    <ECSDI:gusto_actividades_ludicas rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</ECSDI:gusto_actividades_ludicas>
+    <ECSDI:gusto_actividades_culturales rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</ECSDI:gusto_actividades_culturales>
+    <ECSDI:gusto_actividades_festivas rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">3</ECSDI:gusto_actividades_festivas>
+  </rdf:Description>
+</rdf:RDF>
